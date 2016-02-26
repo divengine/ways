@@ -30,7 +30,9 @@ class divControl
 
     static $__listen = array();
 
-    static $__current_way = array();
+    static $__current_way = null;
+
+    static $__webroot = "./";
 
     static $__hooks = array();
 
@@ -47,7 +49,24 @@ class divControl
             $way = $defaultway;
         
         self::$__current_way = $way;
+        
         return self::callAll($way);
+    }
+
+    static function getWebRoot ()
+    {
+        $ruri = $_SERVER['REQUEST_URI'];
+        
+        if ($ruri[0] == "/")
+            $ruri = substr($ruri, 1);
+        
+        $puri = explode("/", $ruri);
+        $c = count($puri);
+        
+        if ($c > 0) {
+            return str_repeat("../", $c - 1);
+        }
+        return '';
     }
 
     /**
@@ -77,22 +96,72 @@ class divControl
     /**
      * Match ways
      *
-     * @param string $way1            
-     * @param string $way2            
+     * @param string $pattern            
+     * @param string $way            
      * @return boolean
      */
-    static function matchWay ($way1, $way2)
+    static function matchWay ($pattern, $way)
     {
-        if ($way1[0] == '/')
-            $way1 = substr($way1, 1);
+        if ($pattern[0] == '/')
+            $pattern = substr($pattern, 1);
         
-        if ($way2[0] == '/')
-            $way2 = substr($way2, 1);
+        if ($way[0] == '/')
+            $way = substr($way, 1);
         
-        if ($way1 == $way2)
+        if ($pattern == $way)
             return true;
         
-        return false;
+        $apattern = explode("/", $pattern);
+        $away = explode("/", $way);
+        $cpattern = count($apattern);
+        
+        // pattern suffix ".../a/b/c"
+        if ($apattern[0] === '...' && $apattern[$cpattern - 1] !== '...') {
+            $s = substr($pattern, 3);
+            $p = strpos($way, $s);
+            
+            if ($p === strlen($way) - strlen($s))
+                return true;
+        }
+        
+        if ($apattern[0] !== '...' && $apattern[$cpattern - 1] === '...') {
+            $s = substr($pattern, 0, strlen($pattern) - 3);
+            $p = strpos($way, $s);
+            
+            if ($p === 0)
+                return true;
+        }
+        
+        // pattern preffix and suffix ".../a/b/c/..."
+        if ($apattern[0] === '...' && $apattern[$cpattern - 1] === '...') {
+            $s = substr($pattern, 0, strlen($pattern) - 3);
+            $s = substr($s, 3);
+            // $s begin and finish with '/', --> /a/b/c/
+            
+            $p = strpos($way, $s);
+            
+            if ($p !== 0 && $p !== strlen($way) - strlen($s))
+                return true;
+        }
+        
+        // pattern *
+        // for example: a/b/c, a/b/*, a/*/c, */b/c, */b/*, */*/*,
+        // a/*/*, */*/c
+        
+        $result = true;
+        foreach ($away as $key => $part) {
+            if (isset($apattern[$key])) {
+                if ($part != $pattern[$key] && $pattern[$key] != '*') {
+                    $result = false;
+                    break;
+                }
+            } else {
+                $result = false;
+                break;
+            }
+        }
+        
+        return $result;
     }
 
     /**
