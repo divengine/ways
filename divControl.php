@@ -15,7 +15,7 @@
  * along with this program as the file LICENSE.txt; if not, please see
  * http://www.gnu.org/licenses/gpl.txt.
  *
- * @author Rafa Rodriguez <rafacuba2015@gmail.com>
+ * @author Rafa Rodriguez <rafageist86@gmail.com>
  * @version 0.1
  */
 
@@ -32,64 +32,83 @@ class divControl
 
     static $__current_way = null;
 
-    static $__webroot = "./";
+    static $__web_root = "./";
 
     static $__hooks = array();
 
     /**
      * Boostrap
      *
-     * @param string $wayvar            
-     * @param string $defaultway            
+     * @param string $way_var
+     * @param string $default_way
+     *
+     * @return array
      */
-    static function bootstrap ($wayvar, $defaultway)
+    static function bootstrap( $way_var, $default_way)
     {
-        $way = self::get($wayvar);
+        $way = self::get($way_var);
+
         if (is_null($way))
-            $way = $defaultway;
+            $way = $default_way;
         
         self::$__current_way = $way;
-        
+
         return self::callAll($way);
     }
 
+	/**
+	 * Return the current way
+	 *
+	 * @return null
+	 */
+    static function getCurrentWay()
+    {
+    	return self::$__current_way;
+    }
+
+	/**
+	 * Get relative path to root folder of website
+	 *
+	 * @return string
+	 */
     static function getWebRoot ()
     {
-        $ruri = $_SERVER['REQUEST_URI'];
+        $request_uri = $_SERVER['REQUEST_URI'];
         
-        if ($ruri[0] == "/")
-            $ruri = substr($ruri, 1);
+        if ($request_uri[0] == "/")
+	        $request_uri = substr($request_uri, 1);
         
-        $puri = explode("/", $ruri);
-        $c = count($puri);
+        $uri_parts = explode("/", $request_uri);
+        $c = count($uri_parts);
         
-        if ($c > 0) {
+        if ($c > 0)
             return str_repeat("../", $c - 1);
-        }
+
         return '';
     }
 
     /**
      * Call all controllers
      *
-     * @param string $way            
+     * @param string $way
+     * @return array
      */
     static function callAll ($way)
     {
-        $data = array();
-        
-        foreach (self::$__listen as $wway => $controllers) {
-            if (self::matchWay($wway, $way)) {
-                foreach ($controllers as $controller) {
-                    $result = self::call($controller, $data);
-                    if (! is_array($result))
-                        $result = array(
-                                $controller => $result
-                        );
+        $data = [];
+	    $done = [];
+        foreach (self::$__listen as $pattern => $controllers)
+        {
+            if (self::matchWay($pattern, $way))
+            {
+                foreach ($controllers as $controller)
+                {
+                    $result = self::call($controller, $data, $done);
                     $data = array_merge($data, $result);
                 }
             }
         }
+
         return $data;
     }
 
@@ -102,21 +121,32 @@ class divControl
      */
     static function matchWay ($pattern, $way)
     {
-        if ($pattern[0] == '/')
-            $pattern = substr($pattern, 1);
-        
+	    if ($pattern[0] == '/')
+	    	$pattern = substr($pattern, 1);
+
+	    $l = strlen($pattern);
+	    if (substr($pattern, $l - 1, 1) == '/')
+		    $pattern = substr($pattern, 0, $l - 1);
+
+	    if ($pattern == '*')
+	    	return true;
+
         if ($way[0] == '/')
             $way = substr($way, 1);
-        
+
+        $l = strlen($way);
+        if (substr($way, $l - 1, 1) == '/')
+        	$way = substr($way, 0, $l - 1);
+
         if ($pattern == $way)
             return true;
         
-        $apattern = explode("/", $pattern);
+        $array_pattern = explode("/", $pattern);
         $away = explode("/", $way);
-        $cpattern = count($apattern);
+        $count_pattern = count($array_pattern);
         
         // pattern suffix ".../a/b/c"
-        if ($apattern[0] === '...' && $apattern[$cpattern - 1] !== '...') {
+        if ($array_pattern[0] === '...' && $array_pattern[$count_pattern - 1] !== '...') {
             $s = substr($pattern, 3);
             $p = strpos($way, $s);
             
@@ -124,7 +154,7 @@ class divControl
                 return true;
         }
         
-        if ($apattern[0] !== '...' && $apattern[$cpattern - 1] === '...') {
+        if ($array_pattern[0] !== '...' && $array_pattern[$count_pattern - 1] === '...') {
             $s = substr($pattern, 0, strlen($pattern) - 3);
             $p = strpos($way, $s);
             
@@ -133,7 +163,7 @@ class divControl
         }
         
         // pattern preffix and suffix ".../a/b/c/..."
-        if ($apattern[0] === '...' && $apattern[$cpattern - 1] === '...') {
+        if ($array_pattern[0] === '...' && $array_pattern[$count_pattern - 1] === '...') {
             $s = substr($pattern, 0, strlen($pattern) - 3);
             $s = substr($s, 3);
             // $s begin and finish with '/', --> /a/b/c/
@@ -150,7 +180,7 @@ class divControl
         
         $result = true;
         foreach ($away as $key => $part) {
-            if (isset($apattern[$key])) {
+            if (isset($array_pattern[$key])) {
                 if ($part != $pattern[$key] && $pattern[$key] != '*') {
                     $result = false;
                     break;
@@ -167,23 +197,49 @@ class divControl
     /**
      * Call to controller
      *
-     * @param string $id            
+     * @param string $controller
+     * @param array $data
+     * @param array $done
+     * @return mixed
      */
-    static function call ($controller, $data = array())
+    static function call ($controller, $data = [], &$done = [])
     {
         if (isset(self::$__controllers[$controller])) {
-            $path = self::$__controllers[$controller]['path'];
-            $classname = $controller;
-            
-            if (file_exists($path)) {
-                
-                ob_start();
-                include_once $path;
+        	$control = self::$__controllers[$controller];
+            $class_name = $control['class_name'];
+
+            if (isset($control['prop']['require']))
+            {
+            	$require =  $control['prop']['require'];
+
+            	if ( ! is_array($require))
+            		$require = [$require];
+
+            	foreach($require as $req)
+		            if ( ! isset( $done[ $req ] ) )
+			            $data = array_merge( $data, self::call( $req, $data, $done ) );
+            }
+
+            if (file_exists($control['path'])) {
+	            ob_start();
+                include_once $control['path'];
+                $output = ob_get_contents();
                 ob_end_clean();
-                
-                return $classname::Run($data);
+
+	            if (class_exists( $control['class_name']))
+	            {
+	            	$result = $class_name::Run($data);
+	            	if ( ! is_array($result))
+	            		$result = [$controller => $result];
+		            $data = array_merge($data, $result);
+	            }
+				else
+	                echo $output;
             }
         }
+
+	    $done[$controller] = true;
+	    return $data;
     }
 
     /**
@@ -202,23 +258,25 @@ class divControl
     /**
      * Register a controller
      *
-     * @param string $id            
-     * @param string $path            
-     * @param string $classname            
+     * @param string $path
      */
     static function register ($path)
     {
         if (! file_exists($path) && file_exists(PACKAGES . "$path"))
             $path = PACKAGES . $path;
-        
-        $classname = self::getClassName($path);
-        
+
+        $class_name = self::getClassName($path);
+
         $prop = self::getCodeProperties($path);
-        
-        self::$__controllers[$classname] = array(
+
+        if ( ! isset($prop['id']))
+	        $prop['id'] = $path;
+
+        self::$__controllers[$prop['id']] = [
+        	    'class_name' => $class_name,
                 'path' => $path,
                 'prop' => $prop
-        );
+        ];
         
         if (isset($prop['listen'])) {
             if (! is_array($prop['listen']))
@@ -227,7 +285,7 @@ class divControl
                 );
             
             foreach ($prop['listen'] as $way)
-                self::listenWay($classname, $way);
+                self::listenWay($prop['id'], $way);
         }
     }
 
@@ -239,26 +297,28 @@ class divControl
      */
     static function getClassName ($path)
     {
-        $classname = explode("/", $path);
-        $classname = $classname[count($classname) - 1];
-        $classname = str_replace('.php', '', $classname);
-        return $classname;
+        $class_name = explode("/", $path);
+        $class_name = $class_name[count($class_name) - 1];
+        $class_name = str_replace('.php', '', $class_name);
+        return $class_name;
     }
 
     /**
+     * Looking for properties in PHP comments (#property = value)
      *
-     * @param string $path            
+     * @param string $path
+     * @param string $prefix
      * @return array
      */
-    static function getCodeProperties ($path, $prefix = '#divcontrol@')
+    static function getCodeProperties ($path, $prefix = '#')
     {
-        if (! file_exists($path))
+        if ( ! file_exists($path))
             return array();
         
         $f = fopen($path, "r");
         
         $l = strlen($prefix);
-        $prop = array();
+        $prop = [];
         while (! feof($f)) {
             $s = fgets($f);
             $s = trim($s);
@@ -267,22 +327,22 @@ class divControl
                 $s = trim($s);
                 $p = strpos($s, '=');
                 if ($p !== false) {
-                    $pname = trim(substr($s, 0, $p));
-                    $pval = substr($s, $p + 1);
-                    if ($pname != '') {
-                        if (isset($prop[$pname])) {
-                            if (! is_array($prop[$pname]))
-                                $prop[$pname] = array(
-                                        $prop[$pname]
+                    $property_name = trim(substr($s, 0, $p));
+                    $property_value = substr($s, $p + 1);
+                    if ($property_name != '') {
+                        if (isset($prop[$property_name])) {
+                            if (! is_array($prop[$property_name]))
+                                $prop[$property_name] = array(
+                                        $prop[$property_name]
                                 );
-                            $prop[$pname][] = $pval;
+                            $prop[$property_name][] = trim($property_value);
                         } else
-                            $prop[$pname] = $pval;
+                            $prop[$property_name] = trim($property_value);
                     }
                 }
             }
         }
-        
+
         fclose($f);
         
         return $prop;
@@ -297,20 +357,20 @@ class divControl
     {
         $ini = parse_ini_file($ini_file, INI_SCANNER_RAW);
         
-        if (isset($ini['divcontrol'])) {
-            foreach ($ini['divcontrol'] as $val) {
-                $classname = self::getClassName($val);
+        if (isset($ini['divControl'])) {
+            foreach ($ini['divControl'] as $val) {
+                $class_name = self::getClassName($val);
                 
                 self::register($val);
                 
-                $p = 'divcontrol-' . $classname;
+                $p = 'divControl-' . $class_name;
                 
                 if (isset($ini[$p]['listen'])) {
                     if (is_array($ini[$p]['listen']))
                         foreach ($ini[$p]['listen'] as $way)
-                            self::listenWay($classname, $way);
+                            self::listenWay($class_name, $way);
                     else
-                        self::listenWay($classname, $ini[$p]['listen']);
+                        self::listenWay($class_name, $ini[$p]['listen']);
                 }
             }
         }
@@ -320,21 +380,20 @@ class divControl
      * Get from GET
      *
      * @param string $var            
-     * @param mixed $default            
+     * @param mixed $default
+     * @return mixed
      */
     static function get ($var, $default = null)
     {
-        if (isset($_GET[$var]))
-            return $_GET[$var];
-        return $default;
+        return (isset($_GET[$var])) ? $_GET[$var] : $default;
     }
 
-    public function registerHook ($moment, $controller, $callto)
+    public function registerHook ($moment, $controller, $callTo)
     {}
 
     public function beforeRun ($controller)
     {}
 
-    public function afetrRun ($controller, &$results)
+    public function afterRun ($controller, &$results)
     {}
 }

@@ -1,0 +1,10 @@
+/* Div PHP Control example */
+body {
+    font-family: Verdana;
+    margin: 10px;
+}
+
+input {
+    padding: 5px;
+    border: 1px solid gray;
+}

@@ -1,0 +1,15 @@
+<!-- Div PHP Control example -->
+<html>
+    <?php include "../app/admin/views/head.html"; ?>
+    <body>
+
+        <?php include "../app/admin/views/header.html"; ?>
+        <a href = "/">&lt;&lt;Back to the site</a>
+        <h1>Login page</h1>
+        <form action="/admin/login" method="POST">
+            User: <input name="user">
+            Pass: <input type="password" name="pass">
+            <input type="submit" name="send" value="Login">
+        </form>
+    </body>
+</html>
