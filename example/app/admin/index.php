@@ -4,11 +4,10 @@
 
 #id = admin-home
 #listen = admin
+#listen = admin/...
 
-if (!isset($_SESSION['login']))
-{
-	header("Location: /admin/login");
-	exit();
-}
+divWays::register('admin/Dashboard.php');
+divWays::register('admin/login.php');
+divWays::register('admin/logout.php');
 
-include "../app/admin/views/index.html";
+$data = divWays::bootstrap("_url", "/admin", $executed);

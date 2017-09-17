@@ -17,4 +17,4 @@ if (isset($_POST['send']))
 	}
 }
 
-include "../app/admin/views/login.html";
+include PACKAGES . "admin/views/login.html";

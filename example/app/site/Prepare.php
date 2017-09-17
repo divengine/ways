@@ -1,6 +1,7 @@
 <?php
 
 #id = prepare
+#type = background
 
 class Prepare {
 
