@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Div PHP Controller 
+ * Div PHP Ways
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,9 @@
  * along with this program as the file LICENSE.txt; if not, please see
  * http://www.gnu.org/licenses/gpl.txt.
  *
- * @author Rafa Rodriguez <rafageist86@gmail.com>
- * @version 0.1
+ * @author Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
+ * @version 1.0
+ * @link https://github.com/divengine/divWays.git
  */
 
 // Constants
