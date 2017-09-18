@@ -1,4 +1,4 @@
-﻿# Div PHP Ways 1.0
+﻿# Div PHP Ways 1.1
 A "way" is different to "path". We need a path for found 
 a specific resource, but we need a way for do something. 
 This library follow this concept when implements the 
@@ -28,7 +28,7 @@ divWays::hook(DIV_WAYS_BEFORE_RUN, "home", function($data){
 $data = divWays::bootstrap('_url', 'home');
 ```
 
-## Call to static method
+## Call a static method
 
 **app/control/Home.php**
 ```php
