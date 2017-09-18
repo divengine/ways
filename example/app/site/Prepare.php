@@ -5,7 +5,7 @@
 
 class Prepare {
 
-	static function Run()
+	static function Run($data, $args)
 	{
 		return ['today' => date("Y-m-d h:i:s")];
 	}

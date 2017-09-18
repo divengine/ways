@@ -1,0 +1,10 @@
+-------------------
+Sep 17, 2017
+-------------------
+- improve/fix match() method
+- capture URL arguments
+
+   divWays::listen("blog/{id}", function($data, $args){
+        echo "Entry #{$args['id']}";
+   });
+- release 1.1 version
