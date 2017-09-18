@@ -188,6 +188,7 @@ class divWays
 		if($pattern[0] == '/') $pattern = substr($pattern, 1);
 
 		$l = strlen($pattern);
+
 		if(substr($pattern, $l - 1, 1) == '/') $pattern = substr($pattern, 0, $l - 1);
 
 		if($pattern == '*') return true;
@@ -236,26 +237,28 @@ class divWays
 		// for example: a/b/c, a/b/*, a/*/c, */b/c, */b/*, */*/*,
 		// a/*/*, */*/c
 
-		$result = true;
-		foreach($array_pattern as $key => $part)
-		{
-			if(isset($away[ $key ]))
-			{
-				$part_pattern        = $array_pattern[ $key ];
-				$part_pattern_length = strlen($part_pattern);
+		if(count($away) != count($array_pattern)) return false;
 
-				if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
-				{
-					$arg          = substr($part_pattern, 1, $part_pattern_length - 2);
-					$args[ $arg ] = $part;
-				}
-				elseif($part != $part_pattern && $part_pattern != '*')
-				{
-					$result = false;
-					break;
-				}
+		$result = true;
+		foreach($away as $key => $part)
+		{
+			if( ! isset($array_pattern[ $key ]))
+			{
+				$result = false;
+				break;
 			}
-			else
+
+			$part_pattern        = $array_pattern[ $key ];
+			$part_pattern_length = strlen($part_pattern);
+
+			if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
+			{
+				$arg          = substr($part_pattern, 1, $part_pattern_length - 2);
+				$args[ $arg ] = $part;
+				continue;
+			}
+
+			if($part != $part_pattern && $part_pattern != '*')
 			{
 				$result = false;
 				break;
