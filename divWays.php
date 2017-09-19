@@ -30,13 +30,16 @@ define('DIV_WAYS_AFTER_RUN', 4);
 
 class divWays
 {
-
+	private static $__way_var = null;
+	private static $__default_way = null;
 	private static $__controllers = [];
 	private static $__listen = [];
 	private static $__current_way = null;
 	private static $__hooks = [];
 	private static $__request_method = null;
 	private static $__executed = 0;
+	public static $__done = [];
+	public static $__args_by_controller = [];
 
 	/**
 	 * Boostrap
@@ -46,11 +49,23 @@ class divWays
 	 * @param string  $output
 	 * @param boolean $show_output
 	 * @param string  $request_method
+	 * @param array   $args
 	 *
 	 * @return array
 	 */
-	static function bootstrap($way_var, $default_way, &$output = '', $show_output = true, $request_method = null)
+	static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null, &$args = [])
 	{
+		if(is_null($way_var)) if(is_null(self::$__way_var)) $way_var = '_url';
+		else $way_var = self::$__way_var;
+
+		if(is_null($default_way)) if(is_null(self::$__default_way)) $default_way = '/';
+		else $default_way = self::$__default_way;
+
+		// save first way and way var for all future bootstraps
+		if(is_null(self::$__way_var)) self::$__way_var = $way_var;
+
+		if(is_null(self::$__default_way)) self::$__default_way = $default_way;
+
 		$way = null;
 
 		if(is_null($request_method)) $request_method = self::getRequestMethod();
@@ -67,12 +82,12 @@ class divWays
 			$way = $_SERVER['argv'][1];
 		}
 
-		if(is_null($way)) $way = $default_way;
+		if(is_null($way) || empty($way)) $way = $default_way;
 
 		self::$__current_way = $way;
 		self::$__executed    = 0;
 
-		return self::callAll($way, $output, $show_output, $request_method);
+		return self::callAll($way, $output, $show_output, $request_method, $default_way, $args);
 	}
 
 	/**
@@ -143,20 +158,28 @@ class divWays
 	 * @param string  $output
 	 * @param boolean $show_output
 	 * @param string  $request_method
+	 * @param string  $default_way
 	 *
 	 * @return array
 	 */
-	static function callAll($way, &$output = '', $show_output = true, $request_method = null)
+	static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = "/")
 	{
 
 		if(is_null($request_method)) $request_method = self::getRequestMethod();
 
 		$data = [];
-		$done = [];
 
 		foreach(self::$__listen as $pattern => $methods)
 		{
 			$args = [];
+
+			$pattern = trim($pattern);
+
+			if(is_null($pattern) || empty($pattern) || $pattern == "/")
+			{
+				$pattern = $default_way;
+			}
+
 			if(self::match($pattern, $way, $args))
 			{
 				$controllers = [];
@@ -165,8 +188,9 @@ class divWays
 
 				foreach($controllers as $controller)
 				{
-					$result = self::call($controller, $data, $args, $done, $output, $show_output);
-					$data   = self::cop($data, $result);
+					$result                                    = self::call($controller, $data, $args, $output, $show_output);
+					$data                                      = self::cop($data, $result);
+					self::$__args_by_controller[ $controller ] = $args;
 				}
 			}
 		}
@@ -185,13 +209,14 @@ class divWays
 	 */
 	static function match($pattern, $way, &$args = [])
 	{
+
 		if($pattern[0] == '/') $pattern = substr($pattern, 1);
 
 		$l = strlen($pattern);
 
 		if(substr($pattern, $l - 1, 1) == '/') $pattern = substr($pattern, 0, $l - 1);
 
-		if($pattern == '*') return true;
+		if($pattern == '*' || $pattern == '...') return true;
 
 		if($way[0] == '/') $way = substr($way, 1);
 
@@ -351,7 +376,7 @@ class divWays
 			$part_pattern        = $array_pattern[ $key ];
 			$part_pattern_length = strlen($part_pattern);
 
-			if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
+			if($part_pattern_length > 2) if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
 			{
 				$arg         = substr($part_pattern, 1, $part_pattern_length - 2);
 				$value_match = self::argChecker($arg, $part, $arg);
@@ -423,14 +448,15 @@ class divWays
 	 * @param string  $controller
 	 * @param array   $data
 	 * @param array   $args
-	 * @param array   $done
 	 * @param string  $output
 	 * @param boolean $show_output
 	 *
 	 * @return mixed
 	 */
-	static function call($controller, $data = [], $args = [], &$done = [], &$output = '', $show_output = false)
+	static function call($controller, $data = [], $args = [], &$output = '', $show_output = false)
 	{
+		$original_controller = $controller;
+
 		// default method to run is Run()
 		$action = 'Run';
 
@@ -441,6 +467,11 @@ class divWays
 			$controller        = $arr[0];
 			$action            = $arr[1];
 			$ignore_properties = true;
+		}
+
+		if(isset(self::$__done[ $original_controller ]))
+		{
+			return $data;
 		}
 
 		if(isset(self::$__controllers[ $controller ]))
@@ -460,7 +491,15 @@ class divWays
 
 				if( ! is_array($require)) $require = [$require];
 
-				foreach($require as $req) if( ! isset($done[ $req ])) $data = array_merge($data, self::call($req, $data, $done, $output, $show_output));
+				foreach($require as $req)
+				{
+					// check if required controller is done (for performance)
+					if( ! isset(self::$__done[ $req ]))
+					{
+						$result = self::call($req, $data, $args, $output, $show_output);
+						$data   = self::cop($data, $result);
+					}
+				}
 			}
 
 			$hooks = [];
@@ -472,7 +511,7 @@ class divWays
 				// hook before include
 				if(isset($hooks[ DIV_WAYS_BEFORE_INCLUDE ]))
 				{
-					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_INCLUDE ], $data, $done, $output, $show_output);
+					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_INCLUDE ], $data, $args, $output, $show_output);
 					$data   = self::cop($data, $result);
 				}
 
@@ -489,7 +528,7 @@ class divWays
 				// hook after include
 				if(isset($hooks[ DIV_WAYS_BEFORE_RUN ]))
 				{
-					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_RUN ], $data, $args, $done, $output, $show_output);
+					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_RUN ], $data, $args, $output, $show_output);
 					$data   = self::cop($data, $result);
 				}
 
@@ -523,7 +562,7 @@ class divWays
 					// hook before output
 					if(isset($hooks[ DIV_WAYS_BEFORE_OUTPUT ]))
 					{
-						$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_OUTPUT ], $data, $args, $done, $output, $show_output);
+						$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_OUTPUT ], $data, $args, $output, $show_output);
 						$data   = self::cop($data, $result);
 					}
 
@@ -555,13 +594,13 @@ class divWays
 				// hook after run
 				if(isset($hooks[ DIV_WAYS_AFTER_RUN ]))
 				{
-					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_OUTPUT ], $data, $args, $done, $output, $show_output);
+					$result = self::processHooks($hooks[ DIV_WAYS_BEFORE_OUTPUT ], $data, $args, $output, $show_output);
 					$data   = self::cop($data, $result);
 				}
 			}
 		}
 
-		$done[ $controller ] = true;
+		self::$__done[ $original_controller ] = true;
 
 		return $data;
 	}
@@ -572,17 +611,16 @@ class divWays
 	 * @param array   $hooks
 	 * @param mixed   $data
 	 * @param array   $args
-	 * @param array   $done
 	 * @param string  $output
 	 * @param boolean $show_output
 	 *
 	 * @return mixed
 	 */
-	static function processHooks($hooks, $data, $args, &$done = [], &$output = '', $show_output = false)
+	static function processHooks($hooks, $data, $args, &$output = '', $show_output = false)
 	{
 		foreach($hooks as $call)
 		{
-			if(is_string($call) && isset($done[ $call ])) continue;
+			if(is_string($call) && isset(self::$__done[ $call ])) continue;
 
 			if(is_callable($call))
 			{
@@ -613,7 +651,7 @@ class divWays
 				if($show_output) echo $action_output;
 			}
 			else
-				$result = self::call($call, $data, $args, $done, $output, $show_output);
+				$result = self::call($call, $data, $args, $output, $show_output);
 
 			if(is_scalar($result)) if(is_string($call)) $result = [$call => $result];
 			else
@@ -761,7 +799,6 @@ class divWays
 		$f = fopen($path, "r");
 
 		$property_value = null;
-		$nextLines      = [];
 
 		$l    = strlen($prefix);
 		$prop = [];

@@ -9,14 +9,12 @@
 
 class Home {
 
-
 	static function Run($data, $args)
 	{
 		include PACKAGES . "site/views/index.html";
 
 		return $data;
 	}
-
 
 	static function About($data, $args)
 	{

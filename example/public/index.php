@@ -12,38 +12,9 @@ define('PACKAGES', '../app/');
 // include the library
 include "../../divWays.php";
 
-// register a controller with custom ID (different from controller definition/properties)
-divWays::register('site/Prepare.php', [
-	'id' => 'prepareData'
-]);
-
-// register a controller and redefine the require property
-divWays::register('site/Home.php', [
-	'require' => ['prepareData']
-]);
-
-// register controller with custom properties
-divWays::register('site/Blog.php', [
-	'id' => 'blog',
-	'listen' => [
-		'/blog',
-		'/blog/...'
-	],
-	'method' => 'Latest'
-]);
-
-// route to blog entry
-divWays::listen('/blog/{id}', 'blog@Entry');
-
-// route to blog comments
-divWays::listen('/blog/{id}/comments', 'blog@Comments');
-
 // register simple scripts as controllers
-divWays::register('site/decorator.php');
-divWays::register('site/log.php');
-
-// custom ways
-divWays::listen("/about", "home@About");
+divWays::register('scripts/log.php');
+divWays::register('scripts/decorator.php');
 
 // ways with closure
 divWays::listen("GET-PUT://contact", function($data, $args)
@@ -51,6 +22,7 @@ divWays::listen("GET-PUT://contact", function($data, $args)
 	echo "Hello {$data['username']}";
 
 	return $data;
+
 }, ['id' => 'contact']);
 
 // a hook before run the contact closure
@@ -60,6 +32,9 @@ divWays::hook(DIV_WAYS_BEFORE_RUN, "contact", function($data)
 
 	return $data;
 });
+
+// another bootstrap for public site
+divWays::register('site/index.php');
 
 // another bootstrap for admin
 divWays::register('admin/index.php');
@@ -87,6 +62,7 @@ divWays::listen("/tests", function($data, $args)
 
 	$pairs = [
 		"elemental" => ["/", "/"],
+		"elemental suffix/prefix" => ["/...", "/"],
 		"equal" => ["/home", "/home"],
 		"different" => ["/home", "/about"],
 		"right to left" => [".../{n-1}/{n}", "a/b/c/d/e"],
@@ -97,14 +73,28 @@ divWays::listen("/tests", function($data, $args)
 		"complex between" => [".../{1}/c/{2}/...", "a/b/c/d/e/f"],
 		"wrong pattern" => [".../{a}/.../{b}/...", "a/b/c/d/e/f"],
 		"check argument" => ["blog/{id|is_int}", "blog/1"],
-		"check argument 2" => ["news/{category|is_news_category}", "news/national"]
+		"check argument 2" => ["news/{category|is_news_category}", "news/national"],
+		"no match" => ["/admin/dashboard", "/blog"],
+		"argument" => ["/blog/{id}", "blog/1"]
 	];
 
 	include "../app/site/views/test-match.phtml";
 
-});
+}, ['id' => "tests"]);
 
 // listen... (see the "_url" in the .htaccess file)
-$data = divWays::bootstrap('_url', 'home');
 
-if(divWays::getTotalExecutions() == 0) die("404 page not found");
+$data             = divWays::bootstrap('_url', 'home');
+$total_executions = divWays::getTotalExecutions();
+
+if($total_executions == 0) die("404 page not found");
+
+echo "<div style=\"color: white; font-family: Arial; background: black;padding:10px;>\"";
+echo "<h2>Arguments by controller</h2><br/>";
+foreach(divWays::$__args_by_controller as $controller => $args)
+{
+	echo "<b>$controller</b>: ";
+	foreach($args as $arg => $value) echo "$arg = <u>$value</u> &nbsp;";
+	echo "<br/>";
+}
+echo "</div>";

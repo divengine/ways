@@ -6,8 +6,10 @@
 #listen = admin
 #listen = admin/...
 
-divWays::register('admin/Dashboard.php');
-divWays::register('admin/login.php');
-divWays::register('admin/logout.php');
+divWays::register('admin/control/Dashboard.php');
+divWays::register('admin/control/Session.php');
 
-$data = divWays::bootstrap("_url", "/admin", $executed);
+divWays::listen('admin/login', 'session@Login');
+divWays::listen('admin/logout', 'session@Logout');
+
+$data = divWays::bootstrap();
