@@ -13,7 +13,7 @@ define('PACKAGES', '../app/');
 include "../../divWays.php";
 
 // register a controller with custom ID (different from controller definition/properties)
-divWays::register('site/Prepare.php',[
+divWays::register('site/Prepare.php', [
 	'id' => 'prepareData'
 ]);
 
@@ -25,7 +25,10 @@ divWays::register('site/Home.php', [
 // register controller with custom properties
 divWays::register('site/Blog.php', [
 	'id' => 'blog',
-	'listen' => ['/blog', '/blog/...'],
+	'listen' => [
+		'/blog',
+		'/blog/...'
+	],
 	'method' => 'Latest'
 ]);
 
@@ -43,13 +46,18 @@ divWays::register('site/log.php');
 divWays::listen("/about", "home@About");
 
 // ways with closure
-divWays::listen("GET-PUT://contact", function($data, $args){
+divWays::listen("GET-PUT://contact", function($data, $args)
+{
 	echo "Hello {$data['username']}";
+
 	return $data;
 }, ['id' => 'contact']);
 
-divWays::hook(DIV_WAYS_BEFORE_RUN,  "contact", function($data){
+// a hook before run the contact closure
+divWays::hook(DIV_WAYS_BEFORE_RUN, "contact", function($data)
+{
 	$data['username'] = "Me";
+
 	return $data;
 });
 
@@ -59,16 +67,44 @@ divWays::register('admin/index.php');
 // another bootstrap for api
 divWays::register('api/bootstrap.php');
 
-// variant 2:
-// divWays::bulkRegister("../app.ini");
-
-divWays::hook(DIV_WAYS_BEFORE_RUN, "home", function($data, $args){
+// a hook before run the home
+divWays::hook(DIV_WAYS_BEFORE_RUN, "home", function($data, $args)
+{
 	$data['username'] = "Visitor";
+
 	return $data;
+});
+
+//create argument checker
+function is_news_category($value)
+{
+	return $value == 'national' || $value == 'international';
+}
+
+divWays::listen("/tests", function($data, $args)
+{
+	// testing match ways with patterns
+
+	$pairs = [
+		"elemental" => ["/", "/"],
+		"equal" => ["/home", "/home"],
+		"different" => ["/home", "/about"],
+		"right to left" => [".../{n-1}/{n}", "a/b/c/d/e"],
+		"left to right" => ["{1}/{2}/...", "a/b/c/d/e"],
+		"between" => [".../b/c/...", "a/b/c/d/e"],
+		"suffix" => [".../b/c", "a/b/c"],
+		"prefix" => ["a/b/...", "a/b/c"],
+		"complex between" => [".../{1}/c/{2}/...", "a/b/c/d/e/f"],
+		"wrong pattern" => [".../{a}/.../{b}/...", "a/b/c/d/e/f"],
+		"check argument" => ["blog/{id|is_int}", "blog/1"],
+		"check argument 2" => ["news/{category|is_news_category}", "news/national"]
+	];
+
+	include "../app/site/views/test-match.phtml";
+
 });
 
 // listen... (see the "_url" in the .htaccess file)
 $data = divWays::bootstrap('_url', 'home');
 
-if (divWays::getTotalExecutions() == 0)
-	die("404 page not found");
+if(divWays::getTotalExecutions() == 0) die("404 page not found");

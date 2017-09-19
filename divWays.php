@@ -16,7 +16,7 @@
  * http://www.gnu.org/licenses/gpl.txt.
  *
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 1.1
+ * @version 1.2
  * @link    https://github.com/divengine/divWays.git
  */
 
@@ -200,25 +200,57 @@ class divWays
 
 		if($pattern == $way) return true;
 
-		$array_pattern = explode("/", $pattern);
-		$away          = explode("/", $way);
-		$count_pattern = count($array_pattern);
+		$array_pattern       = explode("/", $pattern);
+		$array_pattern_count = count($array_pattern);
+		$away                = explode("/", $way);
+		$away_count          = count($away);
+		$count_pattern       = count($array_pattern);
 
 		// pattern suffix ".../a/b/c"
 		if($array_pattern[0] === '...' && $array_pattern[ $count_pattern - 1 ] !== '...')
 		{
 			$s = substr($pattern, 3);
 			$p = strpos($way, $s);
-
 			if($p === strlen($way) - strlen($s)) return true;
+
+			$new_pattern = '';
+			$new_way     = '';
+			$j           = $away_count - 1;
+			for($i = $array_pattern_count - 1; $i > 0; $i --)
+			{
+				$new_pattern = $array_pattern[ $i ] . '/' . $new_pattern;
+				if(isset($away[ $j ]))
+				{
+					$new_way = $away[ $j ] . '/' . $new_way;
+					$j --;
+				}
+			}
+
+			return self::match($new_pattern, $new_way, $args);
 		}
 
+		// pattern prefix "a/b/c/..."
 		if($array_pattern[0] !== '...' && $array_pattern[ $count_pattern - 1 ] === '...')
 		{
 			$s = substr($pattern, 0, strlen($pattern) - 3);
 			$p = strpos($way, $s);
 
 			if($p === 0) return true;
+
+			$new_pattern = '';
+			$new_way     = '';
+			$j           = 0;
+			for($i = 0; $i < $array_pattern_count - 1; $i ++)
+			{
+				$new_pattern = $new_pattern . '/' . $array_pattern[ $i ];
+				if(isset($away[ $j ]))
+				{
+					$new_way = $new_way . '/' . $away[ $j ];
+					$j ++;
+				}
+			}
+
+			return self::match($new_pattern, $new_way, $args);
 		}
 
 		// pattern prefix and suffix ".../a/b/c/..."
@@ -230,7 +262,75 @@ class divWays
 
 			$p = strpos($way, $s);
 
-			if($p !== 0 && $p !== strlen($way) - strlen($s)) return true;
+			if($p !== 0 && $p !== strlen($way) - strlen($s) && $p !== false) return true;
+
+			// search pattern in the way (best match)
+			// pattern:      <-- .../a/b/c/... -->
+			// way:          1/2/3/4/a/b/c/5/6/7/8
+
+			if($away_count >= $array_pattern_count - 2)
+			{
+				$matches_max = 0;
+				$pos         = - 1;
+				$args_max    = [];
+				for($j = 0; $j < $away_count; $j ++)
+				{
+					$matches  = 0;
+					$new_args = [];
+					for($i = 1; $i < $array_pattern_count - 1; $i ++)
+					{
+
+						if($j + $i - 1 >= $away_count)
+						{
+							$matches = 0;
+							break;
+						}
+
+						$part_pattern        = $array_pattern[ $i ];
+						$part_pattern_length = strlen($part_pattern);
+
+						if($away[ $j + $i - 1 ] == $part_pattern) $matches ++;
+						elseif($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
+						{
+
+							$arg         = substr($part_pattern, 1, $part_pattern_length - 2);
+							$arg_value   = $away[ $j + $i - 1 ];
+							$value_match = self::argChecker($arg, $arg_value, $arg);
+
+							if($value_match)
+							{
+								$new_args[ $arg ] = $away[ $j + $i - 1 ];
+								$matches          += 0.75;
+							}
+							else
+							{
+								$matches = 0;
+								break;
+							}
+						}
+						elseif($part_pattern == '*') $matches += 0.5;
+						else
+						{
+							$matches = 0;
+							break;
+						}
+					}
+
+					if($matches_max < $matches)
+					{
+						$matches_max = $matches;
+						$pos         = $j;
+						$args_max    = $new_args;
+					}
+				}
+
+				if($pos > - 1)
+				{
+					$args = $args_max;
+
+					return true;
+				}
+			}
 		}
 
 		// pattern *
@@ -253,9 +353,14 @@ class divWays
 
 			if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
 			{
-				$arg          = substr($part_pattern, 1, $part_pattern_length - 2);
-				$args[ $arg ] = $part;
-				continue;
+				$arg         = substr($part_pattern, 1, $part_pattern_length - 2);
+				$value_match = self::argChecker($arg, $part, $arg);
+
+				if($value_match)
+				{
+					$args[ $arg ] = $part;
+					continue;
+				}
 			}
 
 			if($part != $part_pattern && $part_pattern != '*')
@@ -266,6 +371,50 @@ class divWays
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Check argument value in a way
+	 *
+	 * @param string $pattern
+	 * @param string $arg_value
+	 * @param string $arg
+	 *
+	 * @throws \Exception
+	 * @return bool
+	 */
+	static function argChecker($pattern, $arg_value, &$arg)
+	{
+		if(is_numeric($arg_value)) $arg_value *= 1;
+
+		$value_match = true;
+
+		if(strpos($pattern, '|') !== false)
+		{
+			$arg_parts = explode('|', $pattern);
+			$arg       = $arg_parts[0];
+			$checker   = $arg_parts[1];
+
+			if(is_callable($checker))
+			{
+				if(strpos($checker, '::') !== false)
+				{
+					$checker_parts  = explode('::', $checker);
+					$checker_class  = $checker_parts[0];
+					$checker_method = $checker_parts[1];
+					$value_match    = $checker_class::$checker_method($arg_value);
+				}
+				else
+				{
+					if($checker == 'is_bool') $value_match = strtolower($arg_value) == 'true' || $arg_value == 1 ? true : false;
+					else
+						$value_match = $checker($arg_value);
+				}
+			}
+			else throw new Exception("Argument checker $checker is not callable");
+		}
+
+		return $value_match;
 	}
 
 	/**
@@ -649,35 +798,6 @@ class divWays
 		fclose($f);
 
 		return $prop;
-	}
-
-	/**
-	 * Bulk controller register
-	 *
-	 * @param string $ini_file
-	 */
-	static function bulkRegister($ini_file)
-	{
-		$ini = parse_ini_file($ini_file, INI_SCANNER_RAW);
-
-		if(isset($ini['divWays']))
-		{
-			foreach($ini['divWays'] as $val)
-			{
-				$class_name = self::getClassName($val);
-
-				self::register($val);
-
-				$p = 'divControl-' . $class_name;
-
-				if(isset($ini[ $p ]['listen']))
-				{
-					if(is_array($ini[ $p ]['listen'])) foreach($ini[ $p ]['listen'] as $way) self::listen($way, $class_name);
-					else
-						self::listen($ini[ $p ]['listen'], $class_name);
-				}
-			}
-		}
 	}
 
 	/**

@@ -1,4 +1,17 @@
 -------------------
+Sep 18, 2017
+-------------------
+- better match method
+- argument checker
+
+    divWays::listen("blog/{id:is_int}", function($data, $args){
+        echo "{$args['id']} is integer";
+    });
+
+- improve example
+- drop the obsolete bulkRegister
+
+-------------------
 Sep 17, 2017
 -------------------
 - improve/fix match() method
@@ -7,4 +20,6 @@ Sep 17, 2017
    divWays::listen("blog/{id}", function($data, $args){
         echo "Entry #{$args['id']}";
    });
+
 - release 1.1 version
+
