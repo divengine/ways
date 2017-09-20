@@ -1,4 +1,16 @@
 -------------------
+Sep 20, 2017
+-------------------
+- fix match method and more complexity
+
+  // documentation/chapter-1
+  divWays::listen("documentation/chapter-{id|is_int}", function($data, $args){
+        echo "Chapter #{$args['id']}";
+  });
+- better control of the ways (executing single instance of each controller)
+- improve example
+- release 1.2
+-------------------
 Sep 18, 2017
 -------------------
 - better match method

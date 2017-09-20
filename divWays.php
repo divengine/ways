@@ -38,8 +38,47 @@ class divWays
 	private static $__hooks = [];
 	private static $__request_method = null;
 	private static $__executed = 0;
-	public static $__done = [];
-	public static $__args_by_controller = [];
+	private static $__done = [];
+	private static $__args_by_controller = [];
+
+
+	/**
+	 * Returns list of arguments of controller after bootstrap
+	 *
+	 * @param string $controller
+	 *
+	 * @return array|mixed|null
+	 */
+	static function getArgsByController($controller = null)
+	{
+		if(is_null($controller)) return self::$__args_by_controller;
+
+		if(isset(self::$__args_by_controller)) return self::$__args_by_controller[ $controller ];
+
+		return null;
+	}
+
+	/**
+	 * Get list of controller done after bootstrap
+	 *
+	 * @return array
+	 */
+	static function getDone()
+	{
+		return self::$__done;
+	}
+
+	/**
+	 * Check if a controller was done after bootstrap
+	 *
+	 * @param $controller
+	 *
+	 * @return bool
+	 */
+	static function isDone($controller)
+	{
+		return isset(self::$__done[ $controller ]);
+	}
 
 	/**
 	 * Boostrap
@@ -49,11 +88,10 @@ class divWays
 	 * @param string  $output
 	 * @param boolean $show_output
 	 * @param string  $request_method
-	 * @param array   $args
 	 *
 	 * @return array
 	 */
-	static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null, &$args = [])
+	static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
 	{
 		if(is_null($way_var)) if(is_null(self::$__way_var)) $way_var = '_url';
 		else $way_var = self::$__way_var;
@@ -87,7 +125,7 @@ class divWays
 		self::$__current_way = $way;
 		self::$__executed    = 0;
 
-		return self::callAll($way, $output, $show_output, $request_method, $default_way, $args);
+		return self::callAll($way, $output, $show_output, $request_method, $default_way);
 	}
 
 	/**
@@ -188,14 +226,162 @@ class divWays
 
 				foreach($controllers as $controller)
 				{
-					$result                                    = self::call($controller, $data, $args, $output, $show_output);
-					$data                                      = self::cop($data, $result);
-					self::$__args_by_controller[ $controller ] = $args;
+					if( ! isset(self::$__done[ $controller ]))
+					{
+						$result = self::call($controller, $data, $args, $output, $show_output);
+						$data   = self::cop($data, $result);
+						if( ! isset(self::$__args_by_controller[ $controller ])) self::$__args_by_controller[ $controller ] = [];
+						self::$__args_by_controller[ $controller ][ $pattern ] = $args;
+					}
 				}
 			}
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Remove first and last slashes
+	 *
+	 * @param $value
+	 *
+	 * @return bool|string
+	 */
+	static function clearSideSlashes($value)
+	{
+		if($value[0] == "/") $value = substr($value, 1);
+		if(substr($value, - 1) == "/") $value = substr($value, 0, - 1);
+
+		return $value;
+	}
+
+	/**
+	 * Clear double slashes in ways
+	 *
+	 * @param $value
+	 *
+	 * @return mixed
+	 */
+	static function clearDoubleSlashes($value)
+	{
+		return self::replaceRecursive('//', '/', $value);
+	}
+
+	/**
+	 * Replace recursively in string
+	 *
+	 * @param string $search
+	 * @param string $replace
+	 * @param string $source
+	 *
+	 * @return mixed
+	 */
+	static function replaceRecursive($search, $replace, $source)
+	{
+		while(strpos($source, $search) !== false) $source = str_replace($search, $replace, $source);
+
+		return $source;
+	}
+
+	/**
+	 * Normalize pattern for better matching
+	 *
+	 * @param $value
+	 *
+	 * @return mixed
+	 */
+	static function normalizePattern($value)
+	{
+		$value = str_replace(['{', '}', '*'], ['/{', '}/', '/*/'], $value);
+		$value = self::clearDoubleSlashes($value);
+		$value = self::clearSideSlashes($value);
+
+		return $value;
+	}
+
+	/**
+	 * Normalize ways for better matching
+	 *
+	 * @param $way
+	 * @param $pattern
+	 *
+	 * @return mixed|string
+	 */
+	static function normalizeWay($way, $pattern)
+	{
+		$new_way = '';
+
+		while(true)
+		{
+			$bracket = strpos($pattern, "{");
+			$star    = strpos($pattern, "*");
+
+			if($bracket === false) $bracket = - 1;
+			if($star === false) $star = - 1;
+			if($bracket == - 1 && $star == - 1)
+			{
+				$new_way .= $way;
+				break;
+			}
+
+			if($bracket < $star || $star == - 1)
+			{
+				$p       = $bracket; // first open bracket
+				$new_way .= substr($way, 0, $p) . '/';
+				$new_way = self::clearDoubleSlashes($new_way);
+
+				$p1 = strpos($pattern, '}', $p + 1); // first close bracket
+
+				if($p1 == false) break;
+
+				$ch = substr($pattern, $p1 + 1, 1); // next char from close bracket
+
+				$p3 = false;
+				if(isset($way[ $p ])) $p3 = strpos($way, $ch, $p);
+
+				if($p3 == false)
+				{
+					$new_way .= substr($way, $p);
+					$way     = '';
+				}
+				else
+				{
+					$new_way .= substr($way, $p, $p3 - $p + 1) . '/';
+					$way     = substr($way, $p3);
+				}
+
+				$new_way = self::clearDoubleSlashes($new_way);
+				$pattern = substr($pattern, $p1 + 1);
+			}
+			else
+			{
+				$p = $star;
+
+				$new_way .= substr($way, 0, $p) . '/';
+				$new_way = self::clearDoubleSlashes($new_way);
+
+				$ch = substr($pattern, $p + 1, 1); // next char from close bracket
+
+				$p3 = false;
+				if(isset($way[ $p ])) $p3 = strpos($way, $ch, $p);
+
+				if($p3 == false)
+				{
+					$new_way .= substr($way, $p);
+					$way     = "";
+				}
+				else
+				{
+					$new_way .= substr($way, $p, $p3 - $p) . '/';
+					$way     = substr($way, $p3);
+				}
+
+				$new_way = self::clearDoubleSlashes($new_way);
+				$pattern = substr($pattern, $p + 1);
+			}
+		}
+
+		return self::clearSideSlashes(self::clearDoubleSlashes($new_way));
 	}
 
 	/**
@@ -209,22 +395,14 @@ class divWays
 	 */
 	static function match($pattern, $way, &$args = [])
 	{
-
-		if($pattern[0] == '/') $pattern = substr($pattern, 1);
-
-		$l = strlen($pattern);
-
-		if(substr($pattern, $l - 1, 1) == '/') $pattern = substr($pattern, 0, $l - 1);
-
+		$pattern = self::clearDoubleSlashes(self::clearSideSlashes($pattern));
 		if($pattern == '*' || $pattern == '...') return true;
 
-		if($way[0] == '/') $way = substr($way, 1);
-
-		$l = strlen($way);
-		if(substr($way, $l - 1, 1) == '/') $way = substr($way, 0, $l - 1);
-
+		$way = self::clearDoubleSlashes(self::clearSideSlashes($way));
 		if($pattern == $way) return true;
 
+		$way                 = self::normalizeWay($way, $pattern);
+		$pattern             = self::normalizePattern($pattern);
 		$array_pattern       = explode("/", $pattern);
 		$array_pattern_count = count($array_pattern);
 		$away                = explode("/", $way);
@@ -311,14 +489,12 @@ class divWays
 							break;
 						}
 
-						$part_pattern        = $array_pattern[ $i ];
-						$part_pattern_length = strlen($part_pattern);
+						$part_pattern = $array_pattern[ $i ];
 
 						if($away[ $j + $i - 1 ] == $part_pattern) $matches ++;
-						elseif($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
+						elseif($part_pattern[0] == '{' && substr($part_pattern, - 1) == '}')
 						{
-
-							$arg         = substr($part_pattern, 1, $part_pattern_length - 2);
+							$arg         = substr($part_pattern, 1, - 1);
 							$arg_value   = $away[ $j + $i - 1 ];
 							$value_match = self::argChecker($arg, $arg_value, $arg);
 
@@ -373,12 +549,11 @@ class divWays
 				break;
 			}
 
-			$part_pattern        = $array_pattern[ $key ];
-			$part_pattern_length = strlen($part_pattern);
+			$part_pattern = $array_pattern[ $key ];
 
-			if($part_pattern_length > 2) if($part_pattern[0] == '{' && substr($part_pattern, $part_pattern_length - 1, 1) == '}')
+			if(isset($part_pattern[2])) if($part_pattern[0] == '{' && substr($part_pattern, - 1) == '}')
 			{
-				$arg         = substr($part_pattern, 1, $part_pattern_length - 2);
+				$arg         = substr($part_pattern, 1, - 1);
 				$value_match = self::argChecker($arg, $part, $arg);
 
 				if($value_match)
