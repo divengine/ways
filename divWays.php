@@ -16,7 +16,7 @@
  * http://www.gnu.org/licenses/gpl.txt.
  *
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 1.2
+ * @version 1.3
  * @link    https://github.com/divengine/divWays.git
  */
 
