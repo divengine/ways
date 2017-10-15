@@ -1089,9 +1089,14 @@ class divWays
 		return $source;
 	}
 
-	static function redirect($path)
+	/**
+	 * Redirect to way and exit
+	 *
+	 * @param string $way
+	 */
+	static function redirect($way)
 	{
-		header("Location: $path");
+		header("Location: $way");
 		exit();
 	}
 
