@@ -1,4 +1,9 @@
 -------------------
+Oct 11, 2017
+-------------------
+- important bugfix when normalize the ways
+
+-------------------
 Sep 20, 2017
 -------------------
 - fix match method and more complexity

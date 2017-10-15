@@ -249,8 +249,11 @@ class divWays
 	 */
 	static function clearSideSlashes($value)
 	{
-		if($value[0] == "/") $value = substr($value, 1);
-		if(substr($value, - 1) == "/") $value = substr($value, 0, - 1);
+		if (isset($value[0]))
+		{
+			if($value[0] == "/") $value = substr($value, 1);
+			if(substr($value, - 1) == "/") $value = substr($value, 0, - 1);
+		}
 
 		return $value;
 	}
@@ -346,7 +349,7 @@ class divWays
 				}
 				else
 				{
-					$new_way .= substr($way, $p, $p3 - $p + 1) . '/';
+					$new_way .= substr($way, $p, $p3 - $p) . '/';
 					$way     = substr($way, $p3);
 				}
 
@@ -1084,6 +1087,12 @@ class divWays
 		}
 
 		return $source;
+	}
+
+	static function redirect($path)
+	{
+		header("Location: $path");
+		exit();
 	}
 
 }

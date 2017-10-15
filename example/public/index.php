@@ -4,13 +4,19 @@
 
 // needed for this example
 session_start();
-session_name("div-control-example");
+session_name("div-ways-example");
 
 // arbitrary location for software's packages
 define('PACKAGES', '../app/');
 
 // include the library
 include "../../divWays.php";
+
+echo divWays::normalizeWay("/about.html", "/{page}.html");
+
+die();
+
+
 
 // include separated bootstrap definition
 include "../app/site/control/Tests.php";
