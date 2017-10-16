@@ -1,4 +1,46 @@
 -------------------
+Oct 15, 2017
+-------------------
+- allow listen by method in controller registration
+
+    Blog.php
+    ---------------
+    <?php
+
+    #id = blog
+    #listen = /feed
+    #listen@Entry = /blog/{entry}
+    #listen@Post = post://blog/post
+
+    class Blog {
+
+        static function Run($data = [], $args = [])
+        {
+            echo "This is the feed";
+            return $data;
+        }
+
+        static function Entry($data = [], $args = [])
+        {
+            echo "This is the entry {$args['entry']}";
+            return $data;
+        }
+
+        static function Post($data = [], $args = [])
+        {
+            echo "Posting a blog entry ...";
+            return $data;
+        }
+    }
+
+    bootstrap.php
+    -----------
+    <?php
+
+    include "divWays.php";
+    divWays::register("control/Blog.php");
+
+-------------------
 Oct 14, 2017
 -------------------
 - new method divWays::redirect($way)

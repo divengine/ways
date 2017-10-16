@@ -249,7 +249,7 @@ class divWays
 	 */
 	static function clearSideSlashes($value)
 	{
-		if (isset($value[0]))
+		if(isset($value[0]))
 		{
 			if($value[0] == "/") $value = substr($value, 1);
 			if(substr($value, - 1) == "/") $value = substr($value, 0, - 1);
@@ -933,16 +933,30 @@ class divWays
 			'closure' => null
 		];
 
+		// other listeners (by method)
+		foreach($prop as $key => $value)
+		{
+			if(substr($key, 0, 7) == 'listen@')
+			{
+				if( ! is_array($prop[ $key ])) $prop[ $key ] = [
+					$prop[ $key ]
+				];
+
+				$action = $prop['id'] . '@' . trim(substr($key . ' ', 7));
+
+				foreach($prop[ $key ] as $way)
+					self::listen($way, $action);
+			}
+		}
+
+		// default listener
 		if(isset($prop['listen']))
 		{
 			if( ! is_array($prop['listen'])) $prop['listen'] = [
 				$prop['listen']
 			];
 
-			foreach($prop['listen'] as $way)
-			{
-				self::listen($way, $prop['id']);
-			}
+			foreach($prop['listen'] as $way) self::listen($way, $prop['id']);
 		}
 	}
 
