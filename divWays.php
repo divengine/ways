@@ -111,6 +111,10 @@ class divWays
 		if($request_method != 'CLI')
 		{
 			$way = self::get($way_var);
+
+			if(is_null($way) && isset($_SERVER['REQUEST_URI']) && ! empty(isset($_SERVER['REQUEST_URI']))) $way = $_SERVER['REQUEST_URI'];
+
+			if($way == "/") $way = $default_way;
 		}
 		else
 		{
@@ -202,36 +206,45 @@ class divWays
 	 */
 	static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = "/")
 	{
+		$default_method  = self::getRequestMethod();
+		$request_methods = [];
 
-		if(is_null($request_method)) $request_method = self::getRequestMethod();
+		$way = self::parseWay($way);
+
+		foreach($way['methods'] as $method) $request_methods[ $method ] = $method;
+
+		if( ! is_null($request_method)) $request_methods[ $request_method ] = $request_method;
+
+		if(empty($request_methods)) $request_methods[ $default_method ] = $default_method;
+
+		$way = $way['way'];
 
 		$data = [];
 
 		foreach(self::$__listen as $pattern => $methods)
 		{
-			$args = [];
-
+			$args    = [];
 			$pattern = trim($pattern);
 
-			if(is_null($pattern) || empty($pattern) || $pattern == "/")
-			{
-				$pattern = $default_way;
-			}
+			if(is_null($pattern) || empty($pattern) || $pattern == "/") $pattern = $default_way;
 
 			if(self::match($pattern, $way, $args))
 			{
-				$controllers = [];
-
-				if(isset($methods[ $request_method ])) $controllers = $methods[ $request_method ];
-
-				foreach($controllers as $controller)
+				foreach($request_methods as $request_method)
 				{
-					if( ! isset(self::$__done[ $controller ]))
+					$controllers = [];
+
+					if(isset($methods[ $request_method ])) $controllers = $methods[ $request_method ];
+
+					foreach($controllers as $controller)
 					{
-						$result = self::call($controller, $data, $args, $output, $show_output);
-						$data   = self::cop($data, $result);
-						if( ! isset(self::$__args_by_controller[ $controller ])) self::$__args_by_controller[ $controller ] = [];
-						self::$__args_by_controller[ $controller ][ $pattern ] = $args;
+						if( ! isset(self::$__done[ $controller ]))
+						{
+							$result = self::call($controller, $data, $args, $output, $show_output);
+							$data   = self::cop($data, $result);
+							if( ! isset(self::$__args_by_controller[ $controller ])) self::$__args_by_controller[ $controller ] = [];
+							self::$__args_by_controller[ $controller ][ $pattern ] = $args;
+						}
 					}
 				}
 			}
@@ -647,13 +660,13 @@ class divWays
 			$ignore_properties = true;
 		}
 
-		if(isset(self::$__done[ $original_controller ]))
-		{
-			return $data;
-		}
+		if(isset(self::$__done[ $original_controller ])) return $data;
 
 		if(isset(self::$__controllers[ $controller ]))
 		{
+			// first tag the controller as done!
+			self::$__done[ $original_controller ] = true;
+
 			$control    = self::$__controllers[ $controller ];
 			$class_name = $control['class_name'];
 
@@ -944,8 +957,7 @@ class divWays
 
 				$action = $prop['id'] . '@' . trim(substr($key . ' ', 7));
 
-				foreach($prop[ $key ] as $way)
-					self::listen($way, $action);
+				foreach($prop[ $key ] as $way) self::listen($way, $action);
 			}
 		}
 

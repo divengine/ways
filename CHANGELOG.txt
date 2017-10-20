@@ -1,4 +1,30 @@
 -------------------
+Oct 18, 2017
+-------------------
+- Use $_SERVER['REQUEST_URI'] if any way is detected via GET vars. This
+improvement allow the use of built-in PHP web server in development environment.
+
+    index.php
+    ---------
+    <?php
+
+    include "divWays.php"
+
+    divWays::listen("/my/way", function($data, $args) {
+        echo "Hello world";
+    });
+
+    divWays::bootstrap('_url'); // $_GET['_url'] is missing, then assume $_GET['_url'] = $_SERVER['REQUEST_URI']
+
+    cli
+    ----
+    php -S localhost:9090
+
+    web-browser
+    -----------
+    http://localhost:9090/my/way
+
+-------------------
 Oct 15, 2017
 -------------------
 - allow listen by method in controller registration

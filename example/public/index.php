@@ -12,12 +12,6 @@ define('PACKAGES', '../app/');
 // include the library
 include "../../divWays.php";
 
-echo divWays::normalizeWay("/about.html", "/{page}.html");
-
-die();
-
-
-
 // include separated bootstrap definition
 include "../app/site/control/Tests.php";
 
