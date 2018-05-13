@@ -353,7 +353,7 @@ class divWays
 				$ch = substr($pattern, $p1 + 1, 1); // next char from close bracket
 
 				$p3 = false;
-				if(isset($way[ $p ])) $p3 = strpos($way, $ch, $p);
+				if(isset($way[$p])) if (!empty($ch)) $p3 = strpos($way, $ch, $p);
 
 				if($p3 == false)
 				{
