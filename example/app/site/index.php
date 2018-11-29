@@ -6,12 +6,12 @@
 #listen = /
 
 // register controllers
-divWays::register('site/Control/Prepare.php');
-divWays::register('site/Control/Home.php');
-divWays::register('site/Control/News.php');
+divWays::register('site/control/Prepare.php');
+divWays::register('site/control/Home.php');
+divWays::register('site/control/News.php');
 
 // register controller with custom properties
-divWays::register('site/Control/Blog.php', [
+divWays::register('site/control/Blog.php', [
 	'id' => 'blog',
 	'listen' => [
 		'/blog',

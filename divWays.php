@@ -30,10 +30,11 @@ define('DIV_WAYS_AFTER_RUN', 4);
 
 class divWays
 {
+    private static $__version = 1.3;
 	private static $__way_var = null;
 	private static $__default_way = null;
-	private static $__controllers = [];
-	private static $__listen = [];
+	public static $__controllers = [];
+	public static $__listen = [];
 	private static $__current_way = null;
 	private static $__hooks = [];
 	private static $__request_method = null;
@@ -41,6 +42,15 @@ class divWays
 	private static $__done = [];
 	private static $__args_by_controller = [];
 
+    /**
+     * Get current version
+     *
+     * @return float
+     */
+	public function getVersion()
+    {
+        return self::$__version;
+    }
 
 	/**
 	 * Returns list of arguments of controller after bootstrap
@@ -646,6 +656,7 @@ class divWays
 	 */
 	static function call($controller, $data = [], $args = [], &$output = '', $show_output = false)
 	{
+
 		$original_controller = $controller;
 
 		// default method to run is Run()
@@ -673,7 +684,10 @@ class divWays
 			if( ! $ignore_properties)
 			{
 				// check for custom method
-				if(isset($control['prop']['method'])) $action = $control['prop']['method'];
+				if(isset($control['prop']['method']))
+				{
+					$action = $control['prop']['method'];
+				}
 			}
 
 			if(isset($control['prop']['require']))
@@ -968,7 +982,10 @@ class divWays
 				$prop['listen']
 			];
 
-			foreach($prop['listen'] as $way) self::listen($way, $prop['id']);
+			foreach($prop['listen'] as $way)
+			{
+				self::listen($way, $prop['id']);
+			}
 		}
 	}
 
