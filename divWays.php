@@ -1168,6 +1168,8 @@ class divWays
 	 * @param string $way
 	 * @param string $controller
 	 * @param array $properties
+	 *
+	 * @return string
 	 */
 	static function listen($way, $controller, $properties = [])
 	{
@@ -1216,6 +1218,7 @@ class divWays
 			self::$__listen[$way['way']][$request_method][] = $controller;
 		}
 
+		return $properties['id'];
 	}
 
 	/**
