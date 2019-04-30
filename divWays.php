@@ -205,10 +205,9 @@ class divWays
 		}
 		else
 		{
-			// TODO: process cli arguments
-			// $ php test.php way ...
-			//         0       1  ...
-			$way = $_SERVER['argv'][1];
+			$way = "";
+			$total_arguments = count($_SERVER['argv']);
+			for($i=1;$i<$total_arguments; $i++) $way .= "/".$_SERVER['argv'][$i];
 		}
 
 		if(is_null($way) || empty($way))
