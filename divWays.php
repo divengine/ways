@@ -970,7 +970,7 @@ class divWays
 				{
 					$closure = $control['closure'];
 					ob_start();
-					$result = $closure($data, $args);
+					$result = $closure($data, $args, $control['prop']);
 					$action_output = ob_get_contents();
 					ob_end_clean();
 					$data = self::cop($data, $result);
@@ -978,7 +978,7 @@ class divWays
 				elseif(class_exists($control['class_name']))
 				{
 					ob_start();
-					$result = $class_name::$action($data, $args);
+					$result = $class_name::$action($data, $args, $control['prop']);
 					$action_output = ob_get_contents();
 					ob_end_clean();
 				}
