@@ -56,6 +56,8 @@ class divWays {
 
 	private static $__cli_arguments = null;
 
+  private static $__is_cli = null;
+
 	/**
 	 * Get current version
 	 *
@@ -1337,6 +1339,19 @@ class divWays {
 	static function redirect($way) {
 		header("Location: $way");
 		exit();
+	}
+
+	/**
+	 * Return true if the script was executed in the CLI enviroment
+	 *
+	 * @return boolean
+	 */
+	final static function isCli(){
+		if(self::$__is_cli === null){
+			self::$__is_cli = ( ! isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
+		}
+
+		return self::$__is_cli;
 	}
 
 }
