@@ -1294,6 +1294,10 @@ class divWays {
 				$last_key = FALSE;
 
 				do {
+
+					if (!isset($_SERVER['argv'][$i]))
+						break;
+
 					$arg = trim($_SERVER['argv'][$i]);
 					if (isset($arg[0])) {
 						if ($arg[0] == '-') {
