@@ -1,4 +1,9 @@
 -------------------
+May 17, 2019
+-------------------
+- fix merge of hook data resulting
+
+-------------------
 Oct 18, 2017
 -------------------
 - Use $_SERVER['REQUEST_URI'] if any way is detected via GET vars. This

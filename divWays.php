@@ -965,11 +965,12 @@ class divWays {
 					$result = [$call => $result];
 				}
 				else {
-					$result = ["$call" => $result];
+					$result = ["hook-" . uniqid() => $result];
 				}
 			}
 
-			$data = self::cop($data, $result);
+			if (is_array($result) || is_object($result))
+					$data = self::cop($data, $result);
 		}
 
 		return $data;
