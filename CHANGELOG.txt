@@ -6,6 +6,7 @@ Jun 19, 2019
 - new methods for ::setDefaultWay and ::setWayVar
 - listen ways from CLI !!
 - hook on the fly! ::listen() return the ID of closure
+- release 1.3 version
 
 -------------------
 May 17, 2019
