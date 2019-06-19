@@ -120,8 +120,19 @@ divWays::listen("/sayMeHello/{name}", function($data, $args) {
 
 // hook on the fly
 divWays::hook(DIV_WAYS_BEFORE_RUN, 
-	divWays::listen("/test", function(){
-		echo "This is a test";
+	divWays::listen("/tests/...", function(){
+		
+		divWays::listen("/tests/1", function(){
+			echo "This is the test 1";
+		}); 	
+		
+		divWays::listen("/tests/2", function(){
+			echo "This is the test 2";
+		});
+		
+		if (divWays::match("/tests/3")) {
+			echo "This is the test 3";
+		}
 	}), 
 	function(){
 		if (!isset($_SESSION['user']))
@@ -144,5 +155,33 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^((?s).*)$ index.php?_url=/$1 [QSA,L]
 ```
 
-See the example.
+Note: See the example.
 
+# CLI app
+
+```php
+<?php
+
+// say me hello
+// $ php one_script.php hello Peter
+divWays::listen("/hello/{name}", function ($data = [], $args = []) {
+	echo "Hello {$args['name']}\n";
+});
+```
+
+# Get controller properties
+
+```php
+<?php
+
+$property = "This is a property value";
+
+divWays::listen("/", function ($data = [], $args = [], $properties = []) {
+	echo "Controller ID = " . $properties['id'] . "\n";
+	echo "A controller property = " . $properties['myProperty'];
+
+}, [
+	'myProperty' => $property,
+]);
+
+```
