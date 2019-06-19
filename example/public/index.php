@@ -4,7 +4,6 @@
 
 // needed for this example
 session_start();
-session_name("div-ways-example");
 
 // arbitrary location for software's packages
 define('PACKAGES', '../app/');
@@ -34,6 +33,40 @@ divWays::hook(DIV_WAYS_BEFORE_RUN, "contact", function($data)
 	$data['username'] = "Me";
 
 	return $data;
+});
+
+
+// match a route
+if ( divWays::match("/admin")) {
+	echo "This is the admin section";
+}
+
+
+// listen general way
+divWays::listen("/...", function() {
+
+	// match specific route
+	if ( ! divWays::match("/admin/...")) {
+		echo "<p>This is not the admin section (by match)</p>";
+	}
+
+});
+
+// another way for check the route
+function checkAdmin($value) {
+	return $value == 'admin';
+}
+
+function notAdmin($value) {
+	return !checkAdmin($value);
+}
+
+if (divWays::match("/{section|checkAdmin}/...")) {
+	echo "<p>This is the admin section (by checker)</p>";
+}
+
+divWays::listen("get://{section|notAdmin}/...", function($data, $args){
+	echo "<p>This is the section {$args['section']} and not is admin section</p>";
 });
 
 // another bootstrap for public site

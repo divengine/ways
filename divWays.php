@@ -21,32 +21,43 @@
  */
 
 // Constants
-if (!defined('PACKAGES')) {
-	define('PACKAGES', './');
-}
+!defined('PACKAGES') and define('PACKAGES', './');
+!defined('DIV_WAYS_DEFAULT_WAY_VAR') and define('DIV_WAYS_DEFAULT_WAY_VAR', '_url');
 
 define('DIV_WAYS_BEFORE_INCLUDE', 1);
 define('DIV_WAYS_BEFORE_RUN', 2);
 define('DIV_WAYS_BEFORE_OUTPUT', 3);
 define('DIV_WAYS_AFTER_RUN', 4);
 
-class divWays {
+class divWays
+{
+
+	// Constants
+	const BEFORE_INCLUDE = DIV_WAYS_BEFORE_INCLUDE;
+
+	const BEFORE_RUN = DIV_WAYS_BEFORE_RUN;
+
+	const BEFORE_OUTPUT = DIV_WAYS_BEFORE_OUTPUT;
+
+	const AFTER_RUN = DIV_WAYS_AFTER_RUN;
+
+	const DEFAULT_WAY_VAR = DIV_WAYS_DEFAULT_WAY_VAR;
 
 	private static $__version = 1.3;
 
-	private static $__way_var = NULL;
+	private static $__way_var = null;
 
-	private static $__default_way = NULL;
+	private static $__default_way = "/";
 
 	public static $__controllers = [];
 
 	public static $__listen = [];
 
-	private static $__current_way = NULL;
+	private static $__current_way = null;
 
 	private static $__hooks = [];
 
-	private static $__request_method = NULL;
+	private static $__request_method = null;
 
 	private static $__executed = 0;
 
@@ -56,14 +67,15 @@ class divWays {
 
 	private static $__cli_arguments = null;
 
-  private static $__is_cli = null;
+	private static $__is_cli = null;
 
 	/**
 	 * Get current version
 	 *
 	 * @return float
 	 */
-	public function getVersion() {
+	public function getVersion()
+	{
 		return self::$__version;
 	}
 
@@ -74,7 +86,8 @@ class divWays {
 	 *
 	 * @return array|mixed|null
 	 */
-	static function getArgsByController($controller = NULL) {
+	static function getArgsByController($controller = null)
+	{
 		if (is_null($controller)) {
 			return self::$__args_by_controller;
 		}
@@ -83,7 +96,7 @@ class divWays {
 			return self::$__args_by_controller[$controller];
 		}
 
-		return NULL;
+		return null;
 	}
 
 	/**
@@ -91,7 +104,8 @@ class divWays {
 	 *
 	 * @return array
 	 */
-	static function getDone() {
+	static function getDone()
+	{
 		return self::$__done;
 	}
 
@@ -102,7 +116,8 @@ class divWays {
 	 *
 	 * @return bool
 	 */
-	static function isDone($controller) {
+	static function isDone($controller)
+	{
 		return isset(self::$__done[$controller]);
 	}
 
@@ -111,7 +126,8 @@ class divWays {
 	 *
 	 * @return bool|string
 	 */
-	static function getRelativeRequestUri() {
+	static function getRelativeRequestUri()
+	{
 
 		$uri = '/';
 		if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
@@ -132,73 +148,26 @@ class divWays {
 	/**
 	 * Boostrap
 	 *
-	 * @param string $way_var
-	 * @param string $default_way
-	 * @param string $output
+	 * @param string  $way_var
+	 * @param string  $default_way
+	 * @param string  $output
 	 * @param boolean $show_output
-	 * @param string $request_method
+	 * @param string  $request_method
 	 *
 	 * @return array
 	 */
-	static function bootstrap($way_var = NULL, $default_way = NULL, &$output = '', $show_output = TRUE, $request_method = NULL) {
-		if (is_null($way_var)) {
-			if (is_null(self::$__way_var)) {
-				$way_var = '_url';
-			}
-			else {
-				$way_var = self::$__way_var;
-			}
+	static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
+	{
+		if ( ! is_null($way_var)) {
+			self::setWayVar($way_var);
 		}
 
-		if (is_null($default_way)) {
-			if (is_null(self::$__default_way)) {
-				$default_way = '/';
-			}
-			else {
-				$default_way = self::$__default_way;
-			}
+		if ( ! is_null($default_way)) {
+			self::setDefaultWay($default_way);
 		}
 
-		// save first way and way var for all future bootstraps
-		if (is_null(self::$__way_var)) {
-			self::$__way_var = $way_var;
-		}
-
-		if (is_null(self::$__default_way)) {
-			self::$__default_way = $default_way;
-		}
-
-		$way = NULL;
-
-		if (is_null($request_method)) {
-			$request_method = self::getRequestMethod();
-		}
-
-		if ($request_method != 'CLI') {
-			$way = self::get($way_var);
-
-			if (is_null($way)) {
-				$way = self::getRelativeRequestUri();
-			}
-
-			if ($way == "/") {
-				$way = $default_way;
-			}
-		}
-		else {
-			$way             = "";
-			$total_arguments = count($_SERVER['argv']);
-			for ($i = 1; $i < $total_arguments; $i++) {
-				$way .= "/" . $_SERVER['argv'][$i];
-			}
-		}
-
-		if (is_null($way) || empty($way)) {
-			$way = $default_way;
-		}
-
-		self::$__current_way = $way;
-		self::$__executed    = 0;
+		$way              = self::getCurrentWay($way_var, $default_way, $request_method);
+		self::$__executed = 0;
 
 		return self::callAll($way, $output, $show_output, $request_method, $default_way);
 	}
@@ -208,7 +177,8 @@ class divWays {
 	 *
 	 * @return string
 	 */
-	static function getRequestMethod() {
+	static function getRequestMethod()
+	{
 		if (is_null(self::$__request_method)) {
 			self::$__request_method = "GET";
 
@@ -229,16 +199,114 @@ class divWays {
 	 *
 	 * @return int
 	 */
-	static function getTotalExecutions() {
+	static function getTotalExecutions()
+	{
 		return self::$__executed;
+	}
+
+	/**
+	 * Set default way for all future bootstraps
+	 *
+	 * @param $way
+	 */
+	static function setDefaultWay($way)
+	{
+		self::$__default_way = $way;
+	}
+
+	/**
+	 * Get default way
+	 *
+	 * @return string
+	 */
+	static function getDefaultWay()
+	{
+		return self::$__default_way;
+	}
+
+	/**
+	 * Set the GET var that storage the way
+	 *
+	 * @param $way_var
+	 */
+	static function setWayVar($way_var)
+	{
+		self::$__way_var = $way_var;
+	}
+
+	/**
+	 * Return the GET var that storage the way
+	 *
+	 * @return string
+	 */
+	static function getWayVar()
+	{
+		return self::$__way_var;
 	}
 
 	/**
 	 * Return the current way
 	 *
+	 * @param string $way_var
+	 * @param string $default_way
+	 * @param string $request_method
+	 *
 	 * @return null
 	 */
-	static function getCurrentWay() {
+	static function getCurrentWay($way_var = null, $default_way = null, $request_method = null)
+	{
+
+		if (is_null($default_way) || empty($default_way)) {
+			$default_way = self::$__default_way;
+		}
+
+		if (is_null($way_var)) {
+			if (is_null(self::$__way_var)) {
+				$way_var = DIV_WAYS_DEFAULT_WAY_VAR;
+			} else {
+				$way_var = self::$__way_var;
+			}
+		}
+
+		if (is_null($request_method)) {
+			$request_method = self::getRequestMethod();
+		}
+
+		// checking for current way
+		if (is_null(self::$__current_way)) {
+
+			$way = null;
+
+			if ($request_method != 'CLI') {
+				$way = self::get($way_var);
+
+				if (is_null($way)) {
+					$way = self::getRelativeRequestUri();
+				}
+
+				if ($way == "/") {
+					$way = $default_way;
+				}
+			} else {
+				$way             = "";
+				$total_arguments = count($_SERVER['argv']);
+				for ($i = 1; $i < $total_arguments; $i++) {
+					$way .= "/" . $_SERVER['argv'][$i];
+				}
+			}
+
+			if (is_null($way) || empty($way) || $way == "/") {
+				$way = $default_way;
+			}
+
+			self::$__current_way = $way;
+		}
+
+		// if default_way is forced to "/", this will return "/"
+		if (self::$__current_way == "/") {
+			return $default_way;
+		}
+
 		return self::$__current_way;
 	}
 
@@ -247,7 +315,8 @@ class divWays {
 	 *
 	 * @return string
 	 */
-	static function getWebRoot() {
+	static function getWebRoot()
+	{
 		if (isset($_SERVER['REQUEST_URI'])) {
 			$request_uri = $_SERVER['REQUEST_URI'];
 
@@ -269,15 +338,16 @@ class divWays {
 	/**
 	 * Call all controllers
 	 *
-	 * @param string $way
-	 * @param string $output
+	 * @param string  $way
+	 * @param string  $output
 	 * @param boolean $show_output
-	 * @param string $request_method
-	 * @param string $default_way
+	 * @param string  $request_method
+	 * @param string  $default_way
 	 *
 	 * @return array
 	 */
-	static function callAll($way, &$output = '', $show_output = TRUE, $request_method = NULL, $default_way = "/") {
+	static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = "/")
+	{
 		$default_method  = self::getRequestMethod();
 		$request_methods = [];
 
@@ -339,7 +409,8 @@ class divWays {
 	 *
 	 * @return bool|string
 	 */
-	static function clearSideSlashes($value) {
+	static function clearSideSlashes($value)
+	{
 		if (isset($value[0])) {
 			if ($value[0] == "/") {
 				$value = substr($value, 1);
@@ -359,7 +430,8 @@ class divWays {
 	 *
 	 * @return mixed
 	 */
-	static function clearDoubleSlashes($value) {
+	static function clearDoubleSlashes($value)
+	{
 		return self::replaceRecursive('//', '/', $value);
 	}
 
@@ -372,8 +444,9 @@ class divWays {
 	 *
 	 * @return mixed
 	 */
-	static function replaceRecursive($search, $replace, $source) {
-		while (strpos($source, $search) !== FALSE) {
+	static function replaceRecursive($search, $replace, $source)
+	{
+		while (strpos($source, $search) !== false) {
 			$source = str_replace($search, $replace, $source);
 		}
 
@@ -387,7 +460,8 @@ class divWays {
 	 *
 	 * @return mixed
 	 */
-	static function normalizePattern($value) {
+	static function normalizePattern($value)
+	{
 		$value = str_replace(['{', '}', '*'], ['/{', '}/', '/*/'], $value);
 		$value = self::clearDoubleSlashes($value);
 		$value = self::clearSideSlashes($value);
@@ -403,18 +477,19 @@ class divWays {
 	 *
 	 * @return mixed|string
 	 */
-	static function normalizeWay($way, $pattern) {
+	static function normalizeWay($way, $pattern)
+	{
 
 		$new_way = '';
 
-		while (TRUE) {
+		while (true) {
 			$bracket = strpos($pattern, "{");
 			$star    = strpos($pattern, "*");
 
-			if ($bracket === FALSE) {
+			if ($bracket === false) {
 				$bracket = -1;
 			}
-			if ($star === FALSE) {
+			if ($star === false) {
 				$star = -1;
 			}
 			if ($bracket == -1 && $star == -1) {
@@ -429,30 +504,28 @@ class divWays {
 
 				$p1 = strpos($pattern, '}', $p + 1); // first close bracket
 
-				if ($p1 == FALSE) {
+				if ($p1 == false) {
 					break;
 				}
 
 				$ch = substr($pattern, $p1 + 1, 1); // next char from close bracket
 
-				$p3 = FALSE;
+				$p3 = false;
 				if (isset($way[$p]) && !empty($ch)) {
 					$p3 = @strpos($way, $ch, $p);
 				}
 
-				if ($p3 == FALSE) {
+				if ($p3 == false) {
 					$new_way .= substr($way, $p);
 					$way     = '';
-				}
-				else {
+				} else {
 					$new_way .= substr($way, $p, $p3 - $p) . '/';
 					$way     = substr($way, $p3);
 				}
 
 				$new_way = self::clearDoubleSlashes($new_way);
 				$pattern = substr($pattern, $p1 + 1);
-			}
-			else {
+			} else {
 				$p = $star;
 
 				$new_way .= substr($way, 0, $p) . '/';
@@ -460,16 +533,15 @@ class divWays {
 
 				$ch = substr($pattern, $p + 1, 1); // next char from close bracket
 
-				$p3 = FALSE;
+				$p3 = false;
 				if (isset($way[$p])) {
 					$p3 = strpos($way, $ch, $p);
 				}
 
-				if ($p3 == FALSE) {
+				if ($p3 == false) {
 					$new_way .= substr($way, $p);
 					$way     = "";
-				}
-				else {
+				} else {
 					$new_way .= substr($way, $p, $p3 - $p) . '/';
 					$way     = substr($way, $p3);
 				}
@@ -486,26 +558,27 @@ class divWays {
 	/**
 	 * Internal match
 	 *
-	 * @param $pattern
-	 * @param $way
+	 * @param       $pattern
+	 * @param       $way
 	 * @param array $args
-	 * @param bool $normalizeWay
+	 * @param bool  $normalizeWay
 	 *
 	 * @return bool
 	 * @throws Exception
 	 */
-	private static function matchInternal($pattern, $way, &$args = [], $normalizeWay = TRUE) {
+	private static function matchInternal($pattern, $way, &$args = [], $normalizeWay = true)
+	{
 		$original_pattern = $pattern;
 		$original_way     = $way;
 
 		$pattern = self::clearDoubleSlashes(self::clearSideSlashes($pattern));
 		if ($pattern == '*' || $pattern == '...') {
-			return TRUE;
+			return true;
 		}
 
 		$way = self::clearDoubleSlashes(self::clearSideSlashes($way));
 		if ($pattern == $way) {
-			return TRUE;
+			return true;
 		}
 
 		if ($normalizeWay) {
@@ -526,7 +599,7 @@ class divWays {
 			$p = strpos($way, $s);
 
 			if ($p === strlen($way) - strlen($s)) {
-				return TRUE;
+				return true;
 			}
 
 			$new_pattern = '';
@@ -549,7 +622,7 @@ class divWays {
 			$p = strpos($way, $s);
 
 			if ($p === 0) {
-				return TRUE;
+				return true;
 			}
 
 			$new_pattern = '';
@@ -574,8 +647,8 @@ class divWays {
 
 			$p = strpos($way, $s);
 
-			if ($p !== 0 && $p !== strlen($way) - strlen($s) && $p !== FALSE) {
-				return TRUE;
+			if ($p !== 0 && $p !== strlen($way) - strlen($s) && $p !== false) {
+				return true;
 			}
 
 			// search pattern in the way (best match)
@@ -600,8 +673,7 @@ class divWays {
 
 						if ($away[$j + $i - 1] == $part_pattern) {
 							$matches++;
-						}
-						elseif ($part_pattern[0] == '{' && substr($part_pattern, -1) == '}') {
+						} elseif ($part_pattern[0] == '{' && substr($part_pattern, -1) == '}') {
 							$arg         = substr($part_pattern, 1, -1);
 							$arg_value   = $away[$j + $i - 1];
 							$value_match = self::argChecker($arg, $arg_value, $arg);
@@ -609,16 +681,13 @@ class divWays {
 							if ($value_match) {
 								$new_args[$arg] = $away[$j + $i - 1];
 								$matches        += 0.75;
-							}
-							else {
+							} else {
 								$matches = 0;
 								break;
 							}
-						}
-						elseif ($part_pattern == '*') {
+						} elseif ($part_pattern == '*') {
 							$matches += 0.5;
-						}
-						else {
+						} else {
 							$matches = 0;
 							break;
 						}
@@ -634,7 +703,7 @@ class divWays {
 				if ($pos > -1) {
 					$args = $args_max;
 
-					return TRUE;
+					return true;
 				}
 			}
 		}
@@ -644,13 +713,13 @@ class divWays {
 		// a/*/*, */*/c
 
 		if (count($away) != count($array_pattern)) {
-			return FALSE;
+			return false;
 		}
 
-		$result = TRUE;
+		$result = true;
 		foreach ($away as $key => $part) {
 			if (!isset($array_pattern[$key])) {
-				$result = FALSE;
+				$result = false;
 				break;
 			}
 
@@ -669,7 +738,7 @@ class divWays {
 			}
 
 			if ($part != $part_pattern && $part_pattern != '*') {
-				$result = FALSE;
+				$result = false;
 				break;
 			}
 		}
@@ -682,17 +751,23 @@ class divWays {
 	 *
 	 * @param string $pattern
 	 * @param string $way
-	 * @param array $args
+	 * @param array  $args
 	 * @param bool
 	 *
 	 * @return boolean
 	 *
 	 * @throws Exception
 	 */
-	static function match($pattern, $way, &$args = []) {
-		$result = self::matchInternal($pattern, $way, $args, TRUE);
-		if ($result == FALSE) {
-			$result = self::matchInternal($pattern, $way, $args, FALSE);
+	static function match($pattern, $way = null, &$args = [])
+	{
+
+		if (is_null($way)) {
+			$way = self::getCurrentWay();
+		}
+
+		$result = self::matchInternal($pattern, $way, $args, true);
+		if ($result == false) {
+			$result = self::matchInternal($pattern, $way, $args, false);
 		}
 
 		$cliParams = self::getCliParams();
@@ -708,38 +783,36 @@ class divWays {
 	 * @param string $arg_value
 	 * @param string $arg
 	 *
-	 * @throws \Exception
 	 * @return bool
+	 * @throws \Exception
 	 */
-	static function argChecker($pattern, $arg_value, &$arg) {
+	static function argChecker($pattern, $arg_value, &$arg)
+	{
 		if (is_numeric($arg_value)) {
 			$arg_value *= 1;
 		}
 
-		$value_match = TRUE;
+		$value_match = true;
 
-		if (strpos($pattern, '|') !== FALSE) {
+		if (strpos($pattern, '|') !== false) {
 			$arg_parts = explode('|', $pattern);
 			$arg       = $arg_parts[0];
 			$checker   = $arg_parts[1];
 
 			if (is_callable($checker)) {
-				if (strpos($checker, '::') !== FALSE) {
+				if (strpos($checker, '::') !== false) {
 					$checker_parts  = explode('::', $checker);
 					$checker_class  = $checker_parts[0];
 					$checker_method = $checker_parts[1];
 					$value_match    = $checker_class::$checker_method($arg_value);
-				}
-				else {
+				} else {
 					if ($checker == 'is_bool') {
-						$value_match = strtolower($arg_value) == 'true' || $arg_value == 1 ? TRUE : FALSE;
-					}
-					else {
+						$value_match = strtolower($arg_value) == 'true' || $arg_value == 1 ? true : false;
+					} else {
 						$value_match = $checker($arg_value);
 					}
 				}
-			}
-			else {
+			} else {
 				throw new Exception("Argument checker $checker is not callable");
 			}
 		}
@@ -750,27 +823,28 @@ class divWays {
 	/**
 	 * Call to controller
 	 *
-	 * @param string $controller
-	 * @param array $data
-	 * @param array $args
-	 * @param string $output
+	 * @param string  $controller
+	 * @param array   $data
+	 * @param array   $args
+	 * @param string  $output
 	 * @param boolean $show_output
 	 *
 	 * @return mixed
 	 */
-	static function call($controller, $data = [], $args = [], &$output = '', $show_output = FALSE) {
+	static function call($controller, $data = [], $args = [], &$output = '', $show_output = false)
+	{
 
 		$original_controller = $controller;
 
 		// default method to run is Run()
 		$action = 'Run';
 
-		$ignore_properties = FALSE;
+		$ignore_properties = false;
 		if (stripos($controller, '@')) {
 			$arr               = explode('@', $controller);
 			$controller        = $arr[0];
 			$action            = $arr[1];
-			$ignore_properties = TRUE;
+			$ignore_properties = true;
 		}
 
 		if (isset(self::$__done[$original_controller])) {
@@ -779,7 +853,7 @@ class divWays {
 
 		if (isset(self::$__controllers[$controller])) {
 			// first tag the controller as done!
-			self::$__done[$original_controller] = TRUE;
+			self::$__done[$original_controller] = true;
 
 			$control    = self::$__controllers[$controller];
 			$class_name = $control['class_name'];
@@ -837,10 +911,10 @@ class divWays {
 
 				// running...
 
-				$sum_executed = TRUE;
+				$sum_executed = true;
 				if (isset($control['prop']['type'])) {
 					if (trim(strtolower($control['prop']['type'])) == 'background') {
-						$sum_executed = FALSE;
+						$sum_executed = false;
 					}
 				}
 
@@ -853,14 +927,12 @@ class divWays {
 					$action_output = ob_get_contents();
 					ob_end_clean();
 					$data = self::cop($data, $result);
-				}
-				elseif (class_exists($control['class_name'])) {
+				} elseif (class_exists($control['class_name'])) {
 					ob_start();
 					$result        = $class_name::$action($data, $args, $control['prop']);
 					$action_output = ob_get_contents();
 					ob_end_clean();
-				}
-				else {
+				} else {
 					$result = [];
 
 					// hook before output
@@ -875,8 +947,7 @@ class divWays {
 						$result        = $action($data, $args);
 						$action_output = ob_get_contents();
 						ob_end_clean();
-					}
-					else
+					} else
 						// if not exists a class::method and not exists a function, then output is the include output
 						// and action output is empty
 						if ($show_output) {
@@ -909,7 +980,7 @@ class divWays {
 			}
 		}
 
-		self::$__done[$original_controller] = TRUE;
+		self::$__done[$original_controller] = true;
 
 		return $data;
 	}
@@ -917,15 +988,16 @@ class divWays {
 	/**
 	 * Process hooks
 	 *
-	 * @param array $hooks
-	 * @param mixed $data
-	 * @param array $args
-	 * @param string $output
+	 * @param array   $hooks
+	 * @param mixed   $data
+	 * @param array   $args
+	 * @param string  $output
 	 * @param boolean $show_output
 	 *
 	 * @return mixed
 	 */
-	static function processHooks($hooks, $data, $args, &$output = '', $show_output = FALSE) {
+	static function processHooks($hooks, $data, $args, &$output = '', $show_output = false)
+	{
 		foreach ($hooks as $call) {
 			if (is_string($call) && isset(self::$__done[$call])) {
 				continue;
@@ -934,19 +1006,17 @@ class divWays {
 			if (is_callable($call)) {
 				ob_start();
 				if (is_string($call)) {
-					if (strpos($call, '::') !== FALSE) {
+					if (strpos($call, '::') !== false) {
 						$arr           = explode('::', $call);
 						$call_class    = $arr[0];
 						$call_method   = $arr[1];
 						$result        = $call_class::$call_method($data, $args);
 						$action_output = ob_get_contents();
-					}
-					else {
+					} else {
 						$result        = $call($data, $args);
 						$action_output = ob_get_contents();
 					}
-				}
-				else {
+				} else {
 					$result        = $call($data, $args);
 					$action_output = ob_get_contents();
 				}
@@ -955,22 +1025,21 @@ class divWays {
 				if ($show_output) {
 					echo $action_output;
 				}
-			}
-			else {
+			} else {
 				$result = self::call($call, $data, $args, $output, $show_output);
 			}
 
 			if (is_scalar($result)) {
 				if (is_string($call)) {
 					$result = [$call => $result];
-				}
-				else {
+				} else {
 					$result = ["hook-" . uniqid() => $result];
 				}
 			}
 
-			if (is_array($result) || is_object($result))
-					$data = self::cop($data, $result);
+			if (is_array($result) || is_object($result)) {
+				$data = self::cop($data, $result);
+			}
 		}
 
 		return $data;
@@ -983,7 +1052,8 @@ class divWays {
 	 *
 	 * @return array
 	 */
-	static function parseWay($way) {
+	static function parseWay($way)
+	{
 		$result = [
 			'methods' => [],
 			'way'     => '',
@@ -1018,11 +1088,12 @@ class divWays {
 	 *
 	 * @param string $way
 	 * @param string $controller
-	 * @param array $properties
+	 * @param array  $properties
 	 *
 	 * @return string
 	 */
-	static function listen($way, $controller, $properties = []) {
+	static function listen($way, $controller, $properties = [])
+	{
 		$way = self::parseWay($way);
 
 		if (!isset($properties['id'])) {
@@ -1047,10 +1118,10 @@ class divWays {
 
 		if (is_callable($controller) && !is_string($controller)) {
 			self::$__controllers[$properties['id']] = [
-				'class_name' => NULL,
+				'class_name' => null,
 				'prop'       => $properties,
-				'path'       => NULL,
-				'is_closure' => TRUE,
+				'path'       => null,
+				'is_closure' => true,
 				'closure'    => $controller,
 			];
 
@@ -1068,9 +1139,10 @@ class divWays {
 	 * Register a controller
 	 *
 	 * @param string $path
-	 * @param array $properties
+	 * @param array  $properties
 	 */
-	static function register($path, $properties = []) {
+	static function register($path, $properties = [])
+	{
 		if (!file_exists($path) && file_exists(PACKAGES . "$path")) {
 			$path = PACKAGES . $path;
 		}
@@ -1089,8 +1161,8 @@ class divWays {
 			'class_name' => $class_name,
 			'path'       => $path,
 			'prop'       => $prop,
-			'is_closure' => FALSE,
-			'closure'    => NULL,
+			'is_closure' => false,
+			'closure'    => null,
 		];
 
 		// other listeners (by method)
@@ -1131,7 +1203,8 @@ class divWays {
 	 *
 	 * @return string
 	 */
-	static function getClassName($path) {
+	static function getClassName($path)
+	{
 		$class_name = explode("/", $path);
 		$class_name = $class_name[count($class_name) - 1];
 		$class_name = str_replace('.php', '', $class_name);
@@ -1147,14 +1220,15 @@ class divWays {
 	 *
 	 * @return array
 	 */
-	static function getCodeProperties($path, $prefix = '#') {
+	static function getCodeProperties($path, $prefix = '#')
+	{
 		if (!file_exists($path)) {
 			return [];
 		}
 
 		$f = fopen($path, "r");
 
-		$property_value = NULL;
+		$property_value = null;
 
 		$l    = strlen($prefix);
 		$prop = [];
@@ -1166,7 +1240,7 @@ class divWays {
 				$s = substr($s, $l);
 				$s = trim($s);
 				$p = strpos($s, '=');
-				if ($p !== FALSE) {
+				if ($p !== false) {
 					$property_name  = trim(substr($s, 0, $p));
 					$property_value = substr($s, $p + 1);
 					if ($property_name != '') {
@@ -1177,8 +1251,7 @@ class divWays {
 								];
 							}
 							$prop[$property_name][] = trim($property_value);
-						}
-						else {
+						} else {
 							$prop[$property_name] = trim($property_value);
 						}
 					}
@@ -1195,11 +1268,12 @@ class divWays {
 	 * Get from GET
 	 *
 	 * @param string $var
-	 * @param mixed $default
+	 * @param mixed  $default
 	 *
 	 * @return mixed
 	 */
-	static function get($var, $default = NULL) {
+	static function get($var, $default = null)
+	{
 		return (isset($_GET[$var])) ? $_GET[$var] : $default;
 	}
 
@@ -1207,10 +1281,11 @@ class divWays {
 	 * Register hook
 	 *
 	 * @param integer $moment
-	 * @param string $controller
-	 * @param mixed $call
+	 * @param string  $controller
+	 * @param mixed   $call
 	 */
-	static function hook($moment, $controller, $call) {
+	static function hook($moment, $controller, $call)
+	{
 		if (!isset(self::$__hooks[$controller])) {
 			self::$__hooks[$controller] = [];
 		}
@@ -1225,14 +1300,15 @@ class divWays {
 	/**
 	 * Complete object/array properties
 	 *
-	 * @param mixed $source
-	 * @param mixed $complement
+	 * @param mixed   $source
+	 * @param mixed   $complement
 	 * @param integer $level
 	 *
 	 * @return mixed
 	 */
-	final static function cop(&$source, $complement, $level = 0) {
-		$null = NULL;
+	final static function cop(&$source, $complement, $level = 0)
+	{
+		$null = null;
 
 		if (is_null($source)) {
 			return $complement;
@@ -1259,16 +1335,14 @@ class divWays {
 				if (is_object($source)) {
 					if (isset ($source->$key)) {
 						$source->$key = self::cop($source->$key, $value, $level + 1);
-					}
-					else {
+					} else {
 						$source->$key = self::cop($null, $value, $level + 1);
 					}
 				}
 				if (is_array($source)) {
 					if (isset ($source [$key])) {
 						$source [$key] = self::cop($source [$key], $value, $level + 1);
-					}
-					else {
+					} else {
 						$source [$key] = self::cop($null, $value, $level + 1);
 					}
 				}
@@ -1285,34 +1359,34 @@ class divWays {
 	 *
 	 * @return array
 	 */
-	static function getCliParams($map = NULL) {
+	static function getCliParams($map = null)
+	{
 		if (is_null(self::$__cli_arguments)) {
 			$params = [];
 
 			if (isset($_SERVER['argv'])) {
 
 				$i        = 1;
-				$last_key = FALSE;
+				$last_key = false;
 
 				do {
 
-					if (!isset($_SERVER['argv'][$i]))
+					if (!isset($_SERVER['argv'][$i])) {
 						break;
+					}
 
 					$arg = trim($_SERVER['argv'][$i]);
 					if (isset($arg[0])) {
 						if ($arg[0] == '-') {
-							$params[$arg] = TRUE;
+							$params[$arg] = true;
 							$last_key     = $arg;
-						}
-						else {
+						} else {
 							if ($last_key) {
 								$params[$last_key] = $arg;
-							}
-							else {
+							} else {
 								$params[] = $arg;
 							}
-							$last_key = FALSE;
+							$last_key = false;
 						}
 					}
 
@@ -1341,7 +1415,8 @@ class divWays {
 	 *
 	 * @param string $way
 	 */
-	static function redirect($way) {
+	static function redirect($way)
+	{
 		header("Location: $way");
 		exit();
 	}
@@ -1351,9 +1426,10 @@ class divWays {
 	 *
 	 * @return boolean
 	 */
-	final static function isCli(){
-		if(self::$__is_cli === null){
-			self::$__is_cli = ( ! isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
+	final static function isCli()
+	{
+		if (self::$__is_cli === null) {
+			self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
 		}
 
 		return self::$__is_cli;

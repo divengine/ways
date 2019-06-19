@@ -36,6 +36,17 @@ Div Ways is not only intended for the web but also for
 command line applications. Div Ways is implemented in a 
 single class, in a single file. This allows quick start-up
 and easy adaptation with other platforms.
+## Installation
+
+With composer...
+```
+composer require divengine/div-ways@dev
+```
+
+Without composer, donwload the class and...
+```
+include "divWays.php";
+```
 
 ## Basic usage
 ```php
@@ -72,14 +83,20 @@ $data = divWays::bootstrap('_url', 'home');
 
 class Home {
 	
-	static function Run($data)
+	static function Run()
 	{
 	    echo "Hello world";
 	}
-	
-	static function About($data)
+		
+	static function About()
 	{
 		echo "About us";
+	}
+	
+	#listen@Contact = get://about
+	static function Contact()
+	{
+		echo "Contact us";
 	}
 }
 ```
@@ -88,13 +105,32 @@ class Home {
 ```php
 <?php
 
-include "divWays.php";
+include "divWays.php"; 
 
 // register a controller with the default static method ::Run()
 divWays::register("app/control/Home.php");
 
 // route to another static method ([controllerID]@[method])
 divWays::listen("/about", "home@About");
+
+// route to closure
+divWays::listen("/sayMeHello/{name}", function($data, $args) {
+	echo "Hello {$args['name']}";	
+});
+
+// hook on the fly
+divWays::hook(DIV_WAYS_BEFORE_RUN, 
+	divWays::listen("/test", function(){
+		echo "This is a test";
+	}), 
+	function(){
+		if (!isset($_SESSION['user']))
+		{
+			echo "You are not a tester";
+			return false;
+		}
+		return true;
+	});
 
 // route to a static method
 divWays::bootstrap("_url", "home");
@@ -107,5 +143,6 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^((?s).*)$ index.php?_url=/$1 [QSA,L]
 ```
+
 See the example.
 
