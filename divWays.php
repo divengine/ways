@@ -16,7 +16,7 @@
  * http://www.gnu.org/licenses/gpl.txt.
  *
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 1.3
+ * @version 1.4
  * @link    https://github.com/divengine/div-ways.git
  */
 
@@ -43,7 +43,7 @@ class divWays
 
 	const DEFAULT_WAY_VAR = DIV_WAYS_DEFAULT_WAY_VAR;
 
-	private static $__version = 1.3;
+	private static $__version = 1.4;
 
 	private static $__way_var = null;
 

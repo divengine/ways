@@ -1,4 +1,4 @@
-﻿# Div PHP Ways 1.3
+﻿# Div PHP Ways 1.4
 
 A "way" is different to a "route". We need a path for found 
 a specific resource, but we need a way for do something. 
@@ -133,6 +133,8 @@ divWays::hook(DIV_WAYS_BEFORE_RUN,
 		if (divWays::match("/tests/3")) {
 			echo "This is the test 3";
 		}
+		
+		divWays::bootstrap();
 	}), 
 	function(){
 		if (!isset($_SESSION['user']))
