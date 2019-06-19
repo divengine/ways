@@ -1,6 +1,9 @@
 <?php
-
-/* Div PHP Control example */
+/**
+ * Div PHP Ways
+ *
+ * Example
+ */
 
 // needed for this example
 session_start();
@@ -35,12 +38,10 @@ divWays::hook(DIV_WAYS_BEFORE_RUN, "contact", function($data)
 	return $data;
 });
 
-
 // match a route
 if ( divWays::match("/admin")) {
 	echo "This is the admin section";
 }
-
 
 // listen general way
 divWays::listen("/...", function() {

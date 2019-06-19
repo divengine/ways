@@ -1,9 +1,6 @@
 <?php
 
-/* Div PHP Control example */
-
 #id = admin-home
-#listen = admin
 #listen = admin/...
 
 divWays::register('admin/control/Dashboard.php');

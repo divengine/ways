@@ -11,7 +11,7 @@ class News
 
 	static function Run($data, $args)
 	{
-		include "../app/site/views/header.html";
+		include "../app/site/views/header.phtml";
 
 		// default args
 		$default_args = [

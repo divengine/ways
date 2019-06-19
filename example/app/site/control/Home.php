@@ -10,7 +10,7 @@ class Home {
 
 	static function Run($data, $args)
 	{
-		include PACKAGES . "site/views/index.html";
+		include PACKAGES . "site/views/index.phtml";
 
 		return $data;
 	}
@@ -18,7 +18,7 @@ class Home {
 	static function About($data, $args)
 	{
 		echo "About us";
-		include PACKAGES . "site/views/index.html";
+		include PACKAGES . "site/views/index.phtml";
 
 		return $data;
 	}

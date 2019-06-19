@@ -1,4 +1,13 @@
 -------------------
+Jun 19, 2019
+-------------------
+- new constant for default GET variable of way information: DIV_WAYS_DEFAULT_WAY_VAR
+- more flexibility of ::match ::getCurrentWay
+- new methods for ::setDefaultWay and ::setWayVar
+- listen ways from CLI !!
+- hook on the fly! ::listen() return the ID of closure
+
+-------------------
 May 17, 2019
 -------------------
 - fix merge of hook data resulting

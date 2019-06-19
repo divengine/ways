@@ -6,7 +6,7 @@ class Blog
 {
 	static function Latest($data, $args)
 	{
-		include "../app/site/views/header.html";
+		include "../app/site/views/header.phtml";
 		echo "<h1>Blog</h1>";
 		for($i = 1; $i < 11; $i ++) echo "- <a href=\"/blog/$i\">Entry #$i</a><br/>";
 	}

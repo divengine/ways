@@ -18,7 +18,7 @@ class Session
 			}
 		}
 
-		include PACKAGES . "admin/views/login.html";
+		include PACKAGES . "admin/views/login.phtml";
 	}
 
 	static function Logout($data, $args)

@@ -17,7 +17,7 @@
  *
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
  * @version 1.3
- * @link    https://github.com/divengine/divWays.git
+ * @link    https://github.com/divengine/div-ways.git
  */
 
 // Constants

@@ -9,4 +9,4 @@ if (!isset($_SESSION['login']))
 	exit();
 }
 
-include PACKAGES . "admin/views/index.html";
+include PACKAGES . "admin/views/index.tpl";
