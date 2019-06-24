@@ -1,8 +1,11 @@
 <?php
 
+//echo "aaa";
+
 class Texts
 {
 
+  #listen@randomWord = model://texts/randomWord
 	static function randomWord()
 	{
 		$word     = '';
@@ -18,6 +21,7 @@ class Texts
 		return $word;
 	}
 
+	#listen@randomSentence = model://texts/randomSentence
 	static function randomSentence()
 	{
 		$sentence = ucfirst(self::randomWord());
@@ -27,11 +31,12 @@ class Texts
 		return $sentence;
 	}
 
-	static function randomParagraph()
+  #listen@randomParagraph = model://texts/random/paragraph/{max_sentences}
+	static function randomParagraph($data, $args)
 	{
 		$p = '';
-		for($j = 0; $j < rand(3, 10); $j ++) $p .= self::randomSentence();
+		for($j = 0; $j < rand(3, $args['max_sentences']); $j ++) $p .= self::randomSentence();
 
-		return $p;
+		return ["paragraph" => $p];
 	}
 }

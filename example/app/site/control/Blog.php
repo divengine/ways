@@ -14,7 +14,7 @@ class Blog
 	static function Entry($data, $args)
 	{
 		echo "<h2>Entry #{$args['id']}</h2>";
-		echo Texts::randomParagraph();
+		echo divWays::i("model://texts/random/paragraph/10")['paragraph'];
 	}
 
 	static function Comments($data, $args)

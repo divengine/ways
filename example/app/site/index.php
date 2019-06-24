@@ -10,6 +10,9 @@ divWays::register('site/control/Prepare.php');
 divWays::register('site/control/Home.php');
 divWays::register('site/control/News.php');
 
+// register models
+divWays::register('site/model/bootstrap.php');
+
 // register controller with custom properties
 divWays::register('site/control/Blog.php', [
 	'id' => 'blog',
