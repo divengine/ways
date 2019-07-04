@@ -38,16 +38,22 @@ Div Ways is not only intended for the web but also for
 command line applications. Div Ways is implemented in a 
 single class, in a single file. This allows quick start-up
 and easy adaptation with other platforms.
+
+## Documentation
+https://github.com/divengine/ways/wiki
+
 ## Installation
 
 With composer...
 ```
-composer require divengine/div-ways@dev
+composer require divengine/ways
 ```
 
 Without composer, donwload the class and...
-```
-include "divWays.php";
+
+```php
+include "ways.php";
+use divengine\ways;
 ```
 
 ## Basic usage
@@ -57,21 +63,20 @@ include "divWays.php";
 // arbitrary location for software's packages
 define('PACKAGES', 'path/to/app/');
 
-// include the library
-include "path/to/divWays.php";
+use divengine\ways;
 
 // ways with closure
-divWays::listen("get://home", function($data){
+ways::listen("get://home", function($data){
 	echo "Hello {$data['user']}";
 }, "home");
 
 // add a hook
-divWays::hook(DIV_WAYS_BEFORE_RUN, "home", function($data){
+ways::hook(DIV_WAYS_BEFORE_RUN, "home", function($data){
 	$data['user'] = "Peter";
 });
 
 // listen... 
-$data = divWays::bootstrap('_url', 'home');
+$data = ways::bootstrap('_url', 'home');
 ```
 
 ## Call a static method
@@ -107,36 +112,34 @@ class Home {
 ```php
 <?php
 
-include "divWays.php"; 
-
 // register a controller with the default static method ::Run()
-divWays::register("app/control/Home.php");
+ways::register("app/control/Home.php");
 
 // route to another static method ([controllerID]@[method])
-divWays::listen("/about", "home@About");
+ways::listen("/about", "home@About");
 
 // route to closure
-divWays::listen("/sayMeHello/{name}", function($data, $args) {
+ways::listen("/sayMeHello/{name}", function($data, $args) {
 	echo "Hello {$args['name']}";	
 });
 
 // hook on the fly
-divWays::hook(DIV_WAYS_BEFORE_RUN, 
-	divWays::listen("/tests/...", function(){
+ways::hook(DIV_WAYS_BEFORE_RUN, 
+	ways::listen("/tests/...", function(){
 		
-		divWays::listen("/tests/1", function(){
+		ways::listen("/tests/1", function(){
 			echo "This is the test 1";
 		}); 	
 		
-		divWays::listen("/tests/2", function(){
+		ways::listen("/tests/2", function(){
 			echo "This is the test 2";
 		});
 		
-		if (divWays::match("/tests/3")) {
+		if (ways::match("/tests/3")) {
 			echo "This is the test 3";
 		}
 		
-		divWays::bootstrap();
+		ways::bootstrap();
 	}), 
 	function(){
 		if (!isset($_SESSION['user']))
@@ -148,7 +151,7 @@ divWays::hook(DIV_WAYS_BEFORE_RUN,
 	});
 
 // route to a static method
-divWays::bootstrap("_url", "home");
+ways::bootstrap("_url", "home");
 ```
 
 **.htaccess**
@@ -158,9 +161,6 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^((?s).*)$ index.php?_url=/$1 [QSA,L]
 ```
-
-Note: See the example.
-
 # CLI app
 
 ```php
@@ -168,7 +168,7 @@ Note: See the example.
 
 // say me hello
 // $ php one_script.php hello Peter
-divWays::listen("/hello/{name}", function ($data = [], $args = []) {
+ways::listen("/hello/{name}", function ($data = [], $args = []) {
 	echo "Hello {$args['name']}\n";
 });
 ```
@@ -180,7 +180,7 @@ divWays::listen("/hello/{name}", function ($data = [], $args = []) {
 
 $property = "This is a property value";
 
-divWays::listen("/", function ($data = [], $args = [], $properties = []) {
+ways::listen("/", function ($data = [], $args = [], $properties = []) {
 	echo "Controller ID = " . $properties['id'] . "\n";
 	echo "A controller property = " . $properties['myProperty'];
 
