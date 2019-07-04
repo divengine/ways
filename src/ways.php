@@ -18,8 +18,11 @@ namespace divengine;
  * http://www.gnu.org/licenses/gpl.txt.
  *
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 1.4
- * @link    https://github.com/divengine/div-ways.git
+ * @version 2.0.0
+ * @link    https://divengine.com
+ * @link    https://divengine.com/ways
+ * @link    https://github.com/divengine/ways.git
+ * @link    https://github.com/divengine/ways/wiki
  */
 
 // Constants
@@ -1360,7 +1363,7 @@ class ways
      *
      * @return mixed
      */
-    final static function cop(&$source, $complement, $level = 0)
+    final public static function cop(&$source, $complement, $level = 0)
     {
         $null = null;
 
@@ -1476,11 +1479,11 @@ class ways
     }
 
     /**
-     * Return true if the script was executed in the CLI enviroment
+     * Return true if the script was executed in the CLI environment
      *
      * @return boolean
      */
-    final static function isCli()
+    final public static function isCli()
     {
         if (self::$__is_cli === null) {
             self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
