@@ -45,7 +45,7 @@ class ways
 
     const DEFAULT_WAY_VAR = DIV_WAYS_DEFAULT_WAY_VAR;
 
-    private static $__version = 1.4;
+    private static $__version = '2.0.0';
 
     private static $__way_var = null;
 
@@ -106,7 +106,7 @@ class ways
      *
      * @return array
      */
-    static function getDone()
+    public static function getDone()
     {
         return self::$__done;
     }
@@ -118,7 +118,7 @@ class ways
      *
      * @return bool
      */
-    static function isDone($controller)
+    public static function isDone($controller)
     {
         return isset(self::$__done[$controller]);
     }

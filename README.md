@@ -1,4 +1,4 @@
-﻿# Div PHP Ways 1.4
+﻿# Div PHP Ways 2.0.0
 
 A "way" is different to a "route". We need a path for found 
 a specific resource, but we need a way for do something. 
@@ -52,8 +52,7 @@ composer require divengine/ways
 Without composer, donwload the class and...
 
 ```php
-include "ways.php";
-use divengine\ways;
+include "path/to/divengine/ways.php";
 ```
 
 ## Basic usage
