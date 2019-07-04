@@ -8,8 +8,8 @@
     "mvc",
     "controllers"
   ],
-  "homepage": "https://divengine.com",
-  "version": "1.4.0",
+  "homepage": "https://divengine.com/ways",
+  "version": "2.0.0",
   "require": {
     "php": ">=5.4.0"
   },

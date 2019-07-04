@@ -1,3 +1,7 @@
+Jul 3, 2019
+-------------------
+- Structural changes: `divengine` namespace and `ways` classname
+
 Jun 24, 2019
 -------------------
 - IMPORTAN bugfix! As in divWays, as you are executing, more control points can be loaded depending
