@@ -188,3 +188,13 @@ ways::listen("/", function ($data = [], $args = [], $properties = []) {
 ]);
 
 ```
+
+Enjoy!
+
+-- 
+
+@rafageist
+
+Eng. Rafa Rodriguez
+
+https://rafageist.github.io

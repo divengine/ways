@@ -17,8 +17,10 @@ namespace divengine;
  * along with this program as the file LICENSE.txt; if not, please see
  * http://www.gnu.org/licenses/gpl.txt.
  *
+ * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
  * @version 2.0.0
+ *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
  * @link    https://github.com/divengine/ways.git
