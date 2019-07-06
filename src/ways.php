@@ -19,7 +19,7 @@ namespace divengine;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.0.0
+ * @version 2.1.0
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -35,6 +35,7 @@ define('DIV_WAYS_BEFORE_INCLUDE', 1);
 define('DIV_WAYS_BEFORE_RUN', 2);
 define('DIV_WAYS_BEFORE_OUTPUT', 3);
 define('DIV_WAYS_AFTER_RUN', 4);
+define('DIV_WAYS_RULE_FALSE', 'rule_false');
 
 class ways
 {
@@ -50,7 +51,11 @@ class ways
 
     const DEFAULT_WAY_VAR = DIV_WAYS_DEFAULT_WAY_VAR;
 
-    private static $__version = '2.0.0';
+    const PROPERTY_ID = 'id';
+
+    const PROPERTY_RULES = 'rules';
+
+    private static $__version = '2.1.0';
 
     private static $__way_var = null;
 
@@ -75,6 +80,8 @@ class ways
     private static $__cli_arguments = null;
 
     private static $__is_cli = null;
+
+    private static $__rules = [];
 
     /**
      * Get current version
@@ -416,7 +423,7 @@ class ways
             $request_methods[$method] = $method;
         }
 
-        if (!is_null($request_method)) {
+        if ($request_method !== null) {
             $request_methods[$request_method] = $request_method;
         }
 
@@ -899,7 +906,7 @@ class ways
         $action = 'Run';
 
         $ignore_properties = false;
-        if (stripos($controller, '@')) {
+        if (strpos($controller, '@')) {
             $arr = explode('@', $controller);
             $controller = $arr[0];
             $action = $arr[1];
@@ -915,6 +922,38 @@ class ways
             self::$__done[$original_controller] = true;
 
             $control = self::$__controllers[$controller];
+
+            // check rules
+            if (array_key_exists(self::PROPERTY_RULES, $control['prop'])) {
+                $rules = $control['prop'][self::PROPERTY_RULES];
+
+                if (is_string($rules)) {
+                    $rules = [$rules];
+                }
+
+                $method = "{$controller}@{$action}";
+                if (isset($rules[$method])){
+                    $rules = $rules[$method];
+                    if (is_string($rules)) {
+                        $rules = [$rules];
+                    }
+                }
+
+                foreach ($rules as $rule) {
+                    $check = true;
+                    if (is_string($rule) && array_key_exists($rule, self::$__rules)) {
+                        $check = self::checkRule($rule);
+                    } elseif (is_callable($rule)) {
+                        $check = $rule();
+                    }
+
+                    if ($check === false) // prevent execution
+                    {
+                        return DIV_WAYS_RULE_FALSE;
+                    }
+                }
+            }
+
             $class_name = $control['class_name'];
 
             if (!$ignore_properties) {
@@ -1129,7 +1168,7 @@ class ways
         if (!isset($url['path'])) {
             $url['path'] = '';
         }
-        if (substr($url['host'], 0, 1) == "/") {
+        if (substr($url['host'], 0, 1) === "/") {
             $url['host'] = substr($url['host'], 1);
         }
         if (substr($url['path'], 0, 1) == "/") {
@@ -1147,7 +1186,7 @@ class ways
      *
      * @param string $way
      * @param string $controller
-     * @param array  $properties
+     * @param mixed  $properties
      *
      * @return string
      */
@@ -1155,8 +1194,13 @@ class ways
     {
         $way = self::parseWay($way);
 
-        if (!isset($properties['id'])) {
-            $properties['id'] = uniqid("closure-");
+        // $properties is the ID when is a string
+        if (is_string($properties)) {
+            $properties = [self::PROPERTY_ID => $properties];
+        }
+
+        if (!isset($properties[self::PROPERTY_ID])) {
+            $properties[self::PROPERTY_ID] = uniqid("closure-");
         }
 
         if (!isset($properties['type'])) {
@@ -1176,7 +1220,7 @@ class ways
         }
 
         if (is_callable($controller) && !is_string($controller)) {
-            self::$__controllers[$properties['id']] = [
+            self::$__controllers[$properties[self::PROPERTY_ID]] = [
                 'class_name' => null,
                 'prop'       => $properties,
                 'path'       => null,
@@ -1184,14 +1228,14 @@ class ways
                 'closure'    => $controller,
             ];
 
-            $controller = $properties['id'];
+            $controller = $properties[self::PROPERTY_ID];
         }
 
         foreach ($way['methods'] as $request_method) {
             self::$__listen[$way['way']][$request_method][] = $controller;
         }
 
-        return $properties['id'];
+        return $properties[self::PROPERTY_ID];
     }
 
     /**
@@ -1212,11 +1256,11 @@ class ways
 
         $prop = self::cop($prop, $properties);
 
-        if (!isset($prop['id'])) {
-            $prop['id'] = $path;
+        if (!isset($prop[self::PROPERTY_ID])) {
+            $prop[self::PROPERTY_ID] = $path;
         }
 
-        self::$__controllers[$prop['id']] = [
+        self::$__controllers[$prop[self::PROPERTY_ID]] = [
             'class_name' => $class_name,
             'path'       => $path,
             'prop'       => $prop,
@@ -1226,14 +1270,31 @@ class ways
 
         // other listeners (by method)
         foreach ($prop as $key => $value) {
-            if (substr($key, 0, 7) == 'listen@') {
+            if (strpos($key, 'listen@') === 0) {
                 if (!is_array($prop[$key])) {
                     $prop[$key] = [
                         $prop[$key],
                     ];
                 }
+                $method = trim(substr($key.' ', 7));
+                $action = $prop[self::PROPERTY_ID].'@'.$method;
 
-                $action = $prop['id'].'@'.trim(substr($key.' ', 7));
+                $rules = [];
+                if (isset($prop["rules@{$method}"]))
+                {
+                    $rules = $prop["rules@{$method}"];
+                    if (!is_array($rules)) $rules = [$rules];
+                    foreach ($rules as $rule)
+                        if (!empty(self::$__controllers[$prop[self::PROPERTY_ID]])) {
+
+                            if (is_string(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]))
+                            {
+                                self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]];
+                            }
+
+                            self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES][$action][] = $rule;
+                        }
+                }
 
                 foreach ($prop[$key] as $way) {
                     self::listen($way, $action);
@@ -1249,8 +1310,19 @@ class ways
                 ];
             }
 
+            $rules = [];
+            if (isset($prop["rules"]))
+            {
+                $rules = $prop["rules"];
+
+                if (!is_array($rules)) $rules = [$rules];
+                foreach ($rules as $rule)
+                    self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]['Run'][] = $rule;
+            }
+
+
             foreach ($prop['listen'] as $way) {
-                self::listen($way, $prop['id']);
+                self::listen($way, $prop[self::PROPERTY_ID]);
             }
         }
     }
@@ -1481,6 +1553,31 @@ class ways
     }
 
     /**
+     * Define a rule
+     *
+     * @param $ruleName
+     * @param $rule
+     */
+    public static function rule($ruleName, $rule)
+    {
+        self::$__rules[$ruleName] = $rule;
+    }
+
+    /**
+     * Check a rule
+     *
+     * @param $ruleName
+     *
+     * @return bool
+     */
+    public static function checkRule($ruleName)
+    {
+        $rule = self::$__rules[$ruleName];
+
+        return (bool)$rule();
+    }
+
+    /**
      * Return true if the script was executed in the CLI environment
      *
      * @return boolean
@@ -1494,4 +1591,18 @@ class ways
         return self::$__is_cli;
     }
 
+    // ----------------- UTILS -----------------------
+
+    /**
+     * Output a JSON REST response
+     *
+     * @param     $data
+     * @param int $http_response_code
+     */
+    public static function rest($data, $http_response_code = 200)
+    {
+        header('Content-type: application/json', true, $http_response_code);
+        http_response_code($http_response_code);
+        echo json_encode($data);
+    }
 }

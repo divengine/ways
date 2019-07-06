@@ -1,3 +1,21 @@
+Jul 6, 2019
+-------------------
+- Adding rules!
+
+```php
+
+ways::rule('some-rule', function() {return true or false;});
+
+ways::listen("/secret", function() {...}, [
+	ways::PROPERTY_RULES => [
+		'some-rule',
+		function () {
+			return true; // another rule
+		}
+	] 
+]);
+
+```
 Jul 3, 2019
 -------------------
 - Structural changes: `divengine` namespace and `ways` classname

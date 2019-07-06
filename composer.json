@@ -9,9 +9,10 @@
     "controllers"
   ],
   "homepage": "https://divengine.com/ways",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "require": {
-    "php": ">=5.4.0"
+    "php": ">=5.4.0",
+    "ext-json": "*"
   },
   "autoload": {
     "psr-4": {

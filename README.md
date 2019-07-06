@@ -1,4 +1,4 @@
-﻿# Div PHP Ways 2.0.0
+﻿# Div PHP Ways 2.1.0
 
 A "way" is different to a "route". We need a path for found 
 a specific resource, but we need a way for do something. 
@@ -20,8 +20,6 @@ improving performance of its application. The structure
 of a URL may suggest that Div Ways allows a hierarchical 
 structure of contorl points, but it does not, it can 
 create a whole graph structure.
-
-![div ways MVC](https://github.com/divengine/resources/raw/master/div-ways/cards/div-ways-mvc-sample.png)
 
 In addition to this, a control point may require the 
 previous execution of another control point. You can also 
@@ -49,7 +47,7 @@ With composer...
 composer require divengine/ways
 ```
 
-Without composer, donwload the class and...
+Without composer, download the class and...
 
 ```php
 include "path/to/divengine/ways.php";
