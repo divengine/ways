@@ -1,3 +1,19 @@
+Jul 8, 2019
+-------------------
+- Support namespaces! Now `divengine\ways` detect namespace instruction.
+
+```php
+<?php
+
+namespace MyApp;
+
+#listen = /
+class MyController {
+	static function Run() {
+	    echo "Hello universe";
+	}
+}
+```
 Jul 6, 2019
 -------------------
 - Adding rules!
@@ -22,11 +38,11 @@ Jul 3, 2019
 
 Jun 24, 2019
 -------------------
-- IMPORTAN bugfix! As in divWays, as you are executing, more control points can be loaded depending
+- IMPORTAN bugfix! As in divengine\ways, as you are executing, more control points can be loaded depending
 on the flow that you have designed for the user's actions, since the list of control points is possibly
 a "list that is dynamically increasing".
 
-Solution: Fix `divWays::callAll()` method adding & before item foreach
+Solution: Fix `divengine\ways::callAll()` method adding & before item foreach
 
 ```php
 foreach (self::$__listen as $pattern => &$methods) { ... }
@@ -34,11 +50,11 @@ foreach (self::$__listen as $pattern => &$methods) { ... }
 
 Now the expected behavior must happen
 
-- New method `divWays::invoke($way, $data)`
+- New method `divengine\ways::invoke($way, $data)`
 
 ```php
 <?php
-$entry = divWays::invoke('model://entries/1', [
+$entry = divengine\ways::invoke('model://entries/1', [
 	'filter' => 'monkey island' 
 ]);
 ```
@@ -65,13 +81,13 @@ _index.php_
   
 ```php
 <?php
-include "divWays.php"
+include "divengine\ways.php"
 
-divWays::listen("/my/way", function($data, $args) {
+divengine\ways::listen("/my/way", function($data, $args) {
 	echo "Hello world";
 });
 
-divWays::bootstrap('_url'); // $_GET['_url'] is missing, then assume $_GET['_url'] = $_SERVER['REQUEST_URI']
+divengine\ways::bootstrap('_url'); // $_GET['_url'] is missing, then assume $_GET['_url'] = $_SERVER['REQUEST_URI']
 ```
 
 _cli_
@@ -123,13 +139,13 @@ _bootstrap.php_
 ```php
 <?php
 
-include "divWays.php";
-divWays::register("control/Blog.php");
+include "divengine\ways.php";
+divengine\ways::register("control/Blog.php");
 ```
 
 Oct 14, 2017
 -------------------
-- New method divWays::redirect($way)
+- New method divengine\ways::redirect($way)
 
 Oct 11, 2017
 -------------------
@@ -143,7 +159,7 @@ Sep 20, 2017
 <?php
 
 // documentation/chapter-1
-divWays::listen("documentation/chapter-{id|is_int}", function($data, $args){
+divengine\ways::listen("documentation/chapter-{id|is_int}", function($data, $args){
 	echo "Chapter #{$args['id']}";
 });
 
@@ -159,7 +175,7 @@ Sep 18, 2017
 
 ```php
 <?php
-    divWays::listen("blog/{id:is_int}", function($data, $args){
+    divengine\ways::listen("blog/{id:is_int}", function($data, $args){
         echo "{$args['id']} is integer";
     });
 ```
@@ -175,7 +191,7 @@ Sep 17, 2017
 ```php
 <?php
 
-divWays::listen("blog/{id}", function($data, $args){
+divengine\ways::listen("blog/{id}", function($data, $args){
 	echo "Entry #{$args['id']}";
 });
 ```

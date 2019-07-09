@@ -19,7 +19,7 @@ namespace divengine;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.1.0
+ * @version 2.2.0
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -55,7 +55,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.1.0';
+    private static $__version = '2.2.0';
 
     private static $__way_var = null;
 
@@ -932,7 +932,7 @@ class ways
                 }
 
                 $method = "{$controller}@{$action}";
-                if (isset($rules[$method])){
+                if (isset($rules[$method])) {
                     $rules = $rules[$method];
                     if (is_string($rules)) {
                         $rules = [$rules];
@@ -1244,16 +1244,16 @@ class ways
      * @param string $path
      * @param array  $properties
      */
-    static function register($path, $properties = [])
+    public static function register($path, $properties = [])
     {
         if (!file_exists($path) && file_exists(PACKAGES."$path")) {
             $path = PACKAGES.$path;
         }
 
+        $namespace = null;
+        $prop = self::getCodeProperties($path, '#', $namespace);
         $class_name = self::getClassName($path);
-
-        $prop = self::getCodeProperties($path);
-
+        $class_name = $namespace === null ? $class_name : "$namespace\\$class_name";
         $prop = self::cop($prop, $properties);
 
         if (!isset($prop[self::PROPERTY_ID])) {
@@ -1280,20 +1280,21 @@ class ways
                 $action = $prop[self::PROPERTY_ID].'@'.$method;
 
                 $rules = [];
-                if (isset($prop["rules@{$method}"]))
-                {
+                if (isset($prop["rules@{$method}"])) {
                     $rules = $prop["rules@{$method}"];
-                    if (!is_array($rules)) $rules = [$rules];
-                    foreach ($rules as $rule)
+                    if (!is_array($rules)) {
+                        $rules = [$rules];
+                    }
+                    foreach ($rules as $rule) {
                         if (!empty(self::$__controllers[$prop[self::PROPERTY_ID]])) {
 
-                            if (is_string(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]))
-                            {
+                            if (is_string(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES])) {
                                 self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]];
                             }
 
                             self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES][$action][] = $rule;
                         }
+                    }
                 }
 
                 foreach ($prop[$key] as $way) {
@@ -1311,13 +1312,15 @@ class ways
             }
 
             $rules = [];
-            if (isset($prop["rules"]))
-            {
+            if (isset($prop["rules"])) {
                 $rules = $prop["rules"];
 
-                if (!is_array($rules)) $rules = [$rules];
-                foreach ($rules as $rule)
+                if (!is_array($rules)) {
+                    $rules = [$rules];
+                }
+                foreach ($rules as $rule) {
                     self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]['Run'][] = $rule;
+                }
             }
 
 
@@ -1339,7 +1342,6 @@ class ways
         $class_name = explode("/", $path);
         $class_name = $class_name[count($class_name) - 1];
         $class_name = str_replace('.php', '', $class_name);
-
         return $class_name;
     }
 
@@ -1348,24 +1350,34 @@ class ways
      *
      * @param string $path
      * @param string $prefix
+     * @param string $namespace
      *
      * @return array
      */
-    static function getCodeProperties($path, $prefix = '#')
+    static function getCodeProperties($path, $prefix, &$namespace = null)
     {
         if (!file_exists($path)) {
             return [];
         }
 
-        $f = fopen($path, "r");
+        $f = fopen($path, 'r');
 
         $property_value = null;
 
         $l = strlen($prefix);
         $prop = [];
+        $namespace = null;
+
         while (!feof($f)) {
             $s = fgets($f);
             $s = trim($s);
+
+            // detect namespace
+            $ss = strtolower(trim($s));
+
+            if ($namespace === null && strpos($ss, 'namespace ') === 0) {
+                $namespace = trim(substr($s, 9, -1));
+            }
 
             if (strtolower(substr($s, 0, $l)) == strtolower($prefix)) {
                 $s = substr($s, $l);
