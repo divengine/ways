@@ -19,7 +19,7 @@ namespace divengine;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.2.0
+ * @version 2.3.0
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -55,21 +55,21 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.2.0';
+    private static $__version = '2.3.0';
 
-    private static $__way_var = null;
+    private static $__way_var;
 
-    private static $__default_way = "/";
+    private static $__default_way = '/';
 
     public static $__controllers = [];
 
     public static $__listen = [];
 
-    private static $__current_way = null;
+    private static $__current_way;
 
     private static $__hooks = [];
 
-    private static $__request_method = null;
+    private static $__request_method;
 
     private static $__executed = 0;
 
@@ -77,11 +77,13 @@ class ways
 
     private static $__args_by_controller = [];
 
-    private static $__cli_arguments = null;
+    private static $__cli_arguments;
 
-    private static $__is_cli = null;
+    private static $__is_cli;
 
     private static $__rules = [];
+
+    private static $__way_id;
 
     /**
      * Get current version
@@ -100,9 +102,9 @@ class ways
      *
      * @return array|mixed|null
      */
-    static function getArgsByController($controller = null)
+    public static function getArgsByController($controller = null)
     {
-        if (is_null($controller)) {
+        if ($controller === null) {
             return self::$__args_by_controller;
         }
 
@@ -116,23 +118,34 @@ class ways
     /**
      * Get list of controller done after bootstrap
      *
+     * @param string $way_id
+     *
      * @return array
      */
-    public static function getDone()
+    public static function getDone($way_id = null)
     {
-        return self::$__done;
+        if ($way_id === null) {
+            $way_id = self::getWayId();
+        }
+
+        return self::$__done[$way_id];
     }
 
     /**
      * Check if a controller was done after bootstrap
      *
-     * @param $controller
+     * @param        $controller
+     * @param string $way_id
      *
      * @return bool
      */
-    public static function isDone($controller)
+    public static function isDone($controller, $way_id = null)
     {
-        return isset(self::$__done[$controller]);
+        if ($way_id === null) {
+            $way_id = self::getWayId();
+        }
+
+        return isset(self::$__done[$way_id][$controller]);
     }
 
     /**
@@ -140,7 +153,7 @@ class ways
      *
      * @return bool|string
      */
-    static function getRelativeRequestUri()
+    public static function getRelativeRequestUri()
     {
 
         $uri = '/';
@@ -160,9 +173,9 @@ class ways
     }
 
     /**
-     * Boostrap
+     * Bootstrap
      *
-     * @param string  $way_var
+     * @param mixed   $way_var
      * @param string  $default_way
      * @param string  $output
      * @param boolean $show_output
@@ -171,7 +184,7 @@ class ways
      * @return array
      * @throws \Exception
      */
-    static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
+    public static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
     {
         if (is_array($way_var)) {
             if (isset($way_var['request_method'])) {
@@ -188,11 +201,11 @@ class ways
             }
         }
 
-        if (!is_null($way_var)) {
+        if ($way_var !== null) {
             self::setWayVar($way_var);
         }
 
-        if (!is_null($default_way)) {
+        if ($default_way !== null) {
             self::setDefaultWay($default_way);
         }
 
@@ -207,13 +220,13 @@ class ways
      *
      * @return string
      */
-    static function getRequestMethod()
+    public static function getRequestMethod()
     {
-        if (is_null(self::$__request_method)) {
-            self::$__request_method = "GET";
+        if (self::$__request_method === null) {
+            self::$__request_method = 'GET';
 
-            if (php_sapi_name() == "cli") {
-                self::$__request_method = "CLI";
+            if (php_sapi_name() === 'cli') {
+                self::$__request_method = 'CLI';
             }
 
             if (isset($_SERVER['REQUEST_METHOD'])) {
@@ -229,7 +242,7 @@ class ways
      *
      * @return int
      */
-    static function getTotalExecutions()
+    public static function getTotalExecutions()
     {
         return self::$__executed;
     }
@@ -239,7 +252,7 @@ class ways
      *
      * @param $way
      */
-    static function setDefaultWay($way)
+    public static function setDefaultWay($way)
     {
         self::$__default_way = $way;
     }
@@ -249,7 +262,7 @@ class ways
      *
      * @return string
      */
-    static function getDefaultWay()
+    public static function getDefaultWay()
     {
         return self::$__default_way;
     }
@@ -259,7 +272,7 @@ class ways
      *
      * @param $way_var
      */
-    static function setWayVar($way_var)
+    public static function setWayVar($way_var)
     {
         self::$__way_var = $way_var;
     }
@@ -269,7 +282,7 @@ class ways
      *
      * @return string
      */
-    static function getWayVar()
+    public static function getWayVar()
     {
         return self::$__way_var;
     }
@@ -283,49 +296,49 @@ class ways
      *
      * @return null
      */
-    static function getCurrentWay($way_var = null, $default_way = null, $request_method = null)
+    public static function getCurrentWay($way_var = null, $default_way = null, $request_method = null)
     {
 
-        if (is_null($default_way) || empty($default_way)) {
+        if ($default_way === null || empty($default_way)) {
             $default_way = self::$__default_way;
         }
 
-        if (is_null($way_var)) {
-            if (is_null(self::$__way_var)) {
+        if ($way_var === null) {
+            if (self::$__way_var === null) {
                 $way_var = DIV_WAYS_DEFAULT_WAY_VAR;
             } else {
                 $way_var = self::$__way_var;
             }
         }
 
-        if (is_null($request_method)) {
+        if ($request_method === null) {
             $request_method = self::getRequestMethod();
         }
 
         // checking for current way
-        if (is_null(self::$__current_way)) {
+        if (self::$__current_way === null) {
 
             $way = null;
 
-            if ($request_method != 'CLI') {
+            if ($request_method !== 'CLI') {
                 $way = self::get($way_var);
 
-                if (is_null($way)) {
+                if ($way === null) {
                     $way = self::getRelativeRequestUri();
                 }
 
-                if ($way == "/") {
+                if ($way === '/') {
                     $way = $default_way;
                 }
             } else {
-                $way = "";
+                $way = '';
                 $total_arguments = count($_SERVER['argv']);
                 for ($i = 1; $i < $total_arguments; $i++) {
-                    $way .= "/".$_SERVER['argv'][$i];
+                    $way .= '/'.$_SERVER['argv'][$i];
                 }
             }
 
-            if (is_null($way) || empty($way) || $way == "/") {
+            if ($way === null || empty($way) || $way === '/') {
                 $way = $default_way;
             }
 
@@ -333,7 +346,7 @@ class ways
         }
 
         // if default_way is forced to "/", this will return "/"
-        if (self::$__current_way == "/") {
+        if (self::$__current_way === '/') {
             return $default_way;
         }
 
@@ -345,20 +358,20 @@ class ways
      *
      * @return string
      */
-    static function getWebRoot()
+    public static function getWebRoot()
     {
         if (isset($_SERVER['REQUEST_URI'])) {
             $request_uri = $_SERVER['REQUEST_URI'];
 
-            if ($request_uri[0] == "/") {
+            if ($request_uri[0] === '/') {
                 $request_uri = substr($request_uri, 1);
             }
 
-            $uri_parts = explode("/", $request_uri);
+            $uri_parts = explode('/', $request_uri);
             $c = count($uri_parts);
 
             if ($c > 0) {
-                return str_repeat("../", $c - 1);
+                return str_repeat('../', $c - 1);
             }
         }
 
@@ -368,21 +381,44 @@ class ways
     /**
      * Invoke a way and get data resulting from the flow
      *
-     * @param $way
-     * @param $data
+     * @param        $way
+     * @param array  $data
+     *
+     * @param string $output
      *
      * @return array
      * @throws \Exception
      */
-    static function invoke($way, $data = [])
+    public static function invoke($way, $data = [], &$output = '')
     {
-        return self::callAll($way, $output, true, null, "/", $data);
+        $way_id = self::getWayId(true);
+        return self::callAll($way, $output, true, null, '/', $data, $way_id);
+    }
+
+    /**
+     * Get current or new way id
+     *
+     * @param bool $new
+     *
+     * @return string
+     */
+    public static function getWayId($new = false)
+    {
+        if ($new) {
+            return uniqid('', true);
+        }
+
+        if (self::$__way_id === null) {
+            self::$__way_id = uniqid('', true);
+        }
+
+        return self::$__way_id;
     }
 
     /**
      * Call all controllers
      *
-     * @param string  $way
+     * @param mixed  $way
      * @param string  $output
      * @param boolean $show_output
      * @param string  $request_method
@@ -393,8 +429,12 @@ class ways
      * @return array
      * @throws \Exception
      */
-    static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = "/", $data = [])
+    public static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = '/', $data = [], $way_id = null)
     {
+
+        if ($way_id === null) {
+            $way_id = self::getWayId();
+        }
 
         if (is_array($way)) {
             if (isset($way['data'])) {
@@ -437,28 +477,38 @@ class ways
             $args = [];
             $pattern = trim($pattern);
 
-            if (is_null($pattern) || empty($pattern) || $pattern == "/") {
+            if ($pattern === null || empty($pattern) || $pattern === '/') {
                 $pattern = $default_way;
             }
 
             if (self::match($pattern, $way, $args)) {
-                foreach ($request_methods as $request_method) {
+                foreach ($request_methods as $req_method) {
                     $controllers = [];
 
-                    if (isset($methods[$request_method])) {
-                        $controllers = $methods[$request_method];
+                    if (isset($methods['*'])) {
+                        $controllers = array_merge($methods['*']);
+                    }
+
+                    if (isset($methods[$req_method])) {
+                        $controllers = array_merge($methods[$req_method]);
                     }
 
                     foreach ($controllers as $controller) {
-                        if (!isset(self::$__done[$controller])) {
+                        if (!isset(self::$__done[$way_id][$controller])) {
 
-                            $result = self::call($controller, $data, $args, $output, $show_output);
+                            $result = self::call($controller, $data, $args, $output, $show_output, $way_id);
 
                             $data = self::cop($data, $result);
-                            if (!isset(self::$__args_by_controller[$controller])) {
-                                self::$__args_by_controller[$controller] = [];
+
+                            if (!isset(self::$__args_by_controller[$way_id])) {
+                                self::$__args_by_controller[$way_id] = [];
                             }
-                            self::$__args_by_controller[$controller][$pattern] = $args;
+
+                            if (!isset(self::$__args_by_controller[$way_id][$controller])) {
+                                self::$__args_by_controller[$way_id][$controller] = [];
+                            }
+
+                            self::$__args_by_controller[$way_id][$controller][$pattern] = $args;
                         }
                     }
                 }
@@ -475,13 +525,13 @@ class ways
      *
      * @return bool|string
      */
-    static function clearSideSlashes($value)
+    public static function clearSideSlashes($value)
     {
         if (isset($value[0])) {
-            if ($value[0] == "/") {
+            if ($value[0] === '/') {
                 $value = substr($value, 1);
             }
-            if (substr($value, -1) == "/") {
+            if (substr($value, -1) === '/') {
                 $value = substr($value, 0, -1);
             }
         }
@@ -496,7 +546,7 @@ class ways
      *
      * @return mixed
      */
-    static function clearDoubleSlashes($value)
+    public static function clearDoubleSlashes($value)
     {
         return self::replaceRecursive('//', '/', $value);
     }
@@ -510,7 +560,7 @@ class ways
      *
      * @return mixed
      */
-    static function replaceRecursive($search, $replace, $source)
+    public static function replaceRecursive($search, $replace, $source)
     {
         while (strpos($source, $search) !== false) {
             $source = str_replace($search, $replace, $source);
@@ -526,7 +576,7 @@ class ways
      *
      * @return mixed
      */
-    static function normalizePattern($value)
+    public static function normalizePattern($value)
     {
         $value = str_replace(['{', '}', '*'], ['/{', '}/', '/*/'], $value);
         $value = self::clearDoubleSlashes($value);
@@ -543,14 +593,14 @@ class ways
      *
      * @return mixed|string
      */
-    static function normalizeWay($way, $pattern)
+    public static function normalizeWay($way, $pattern)
     {
 
         $new_way = '';
 
         while (true) {
-            $bracket = strpos($pattern, "{");
-            $star = strpos($pattern, "*");
+            $bracket = strpos($pattern, '{');
+            $star = strpos($pattern, '*');
 
             if ($bracket === false) {
                 $bracket = -1;
@@ -570,7 +620,7 @@ class ways
 
                 $p1 = strpos($pattern, '}', $p + 1); // first close bracket
 
-                if ($p1 == false) {
+                if ($p1 === false) {
                     break;
                 }
 
@@ -606,7 +656,7 @@ class ways
 
                 if ($p3 == false) {
                     $new_way .= substr($way, $p);
-                    $way = "";
+                    $way = '';
                 } else {
                     $new_way .= substr($way, $p, $p3 - $p).'/';
                     $way = substr($way, $p3);
@@ -638,7 +688,7 @@ class ways
         $original_way = $way;
 
         $pattern = self::clearDoubleSlashes(self::clearSideSlashes($pattern));
-        if ($pattern == '*' || $pattern == '...') {
+        if ($pattern === '*' || $pattern === '...') {
             return true;
         }
 
@@ -652,9 +702,9 @@ class ways
         }
 
         $pattern = self::normalizePattern($pattern);
-        $array_pattern = explode("/", $pattern);
+        $array_pattern = explode('/', $pattern);
         $array_pattern_count = count($array_pattern);
-        $away = explode("/", $way);
+        $away = explode('/', $way);
         $away_count = count($away);
         $count_pattern = count($array_pattern);
 
@@ -739,7 +789,7 @@ class ways
 
                         if ($away[$j + $i - 1] == $part_pattern) {
                             $matches++;
-                        } elseif ($part_pattern[0] == '{' && substr($part_pattern, -1) == '}') {
+                        } elseif ($part_pattern[0] === '{' && substr($part_pattern, -1) === '}') {
                             $arg = substr($part_pattern, 1, -1);
                             $arg_value = $away[$j + $i - 1];
                             $value_match = self::argChecker($arg, $arg_value, $arg);
@@ -751,7 +801,7 @@ class ways
                                 $matches = 0;
                                 break;
                             }
-                        } elseif ($part_pattern == '*') {
+                        } elseif ($part_pattern === '*') {
                             $matches += 0.5;
                         } else {
                             $matches = 0;
@@ -792,7 +842,7 @@ class ways
             $part_pattern = $array_pattern[$key];
 
             if (isset($part_pattern[2])) {
-                if ($part_pattern[0] == '{' && substr($part_pattern, -1) == '}') {
+                if ($part_pattern[0] === '{' && substr($part_pattern, -1) === '}') {
                     $arg = substr($part_pattern, 1, -1);
                     $value_match = self::argChecker($arg, $part, $arg);
 
@@ -803,7 +853,7 @@ class ways
                 }
             }
 
-            if ($part != $part_pattern && $part_pattern != '*') {
+            if ($part != $part_pattern && $part_pattern !== '*') {
                 $result = false;
                 break;
             }
@@ -824,10 +874,10 @@ class ways
      *
      * @throws Exception
      */
-    static function match($pattern, $way = null, &$args = [])
+    public static function match($pattern, $way = null, &$args = [])
     {
 
-        if (is_null($way)) {
+        if ($way === null) {
             $way = self::getCurrentWay();
         }
 
@@ -852,7 +902,7 @@ class ways
      * @return bool
      * @throws \Exception
      */
-    static function argChecker($pattern, $arg_value, &$arg)
+    public static function argChecker($pattern, $arg_value, &$arg)
     {
         if (is_numeric($arg_value)) {
             $arg_value *= 1;
@@ -872,8 +922,8 @@ class ways
                     $checker_method = $checker_parts[1];
                     $value_match = $checker_class::$checker_method($arg_value);
                 } else {
-                    if ($checker == 'is_bool') {
-                        $value_match = strtolower($arg_value) == 'true' || $arg_value == 1 ? true : false;
+                    if ($checker === 'is_bool') {
+                        $value_match = strtolower($arg_value) === 'true' || $arg_value == 1 ? true : false;
                     } else {
                         $value_match = $checker($arg_value);
                     }
@@ -897,8 +947,11 @@ class ways
      *
      * @return mixed
      */
-    static function call($controller, $data = [], $args = [], &$output = '', $show_output = false)
+    public static function call($controller, $data = [], $args = [], &$output = '', $show_output = false, $way_id = null)
     {
+        if ($way_id === null) {
+            $way_id = self::getWayId();
+        }
 
         $original_controller = $controller;
 
@@ -913,13 +966,13 @@ class ways
             $ignore_properties = true;
         }
 
-        if (isset(self::$__done[$original_controller])) {
+        if (isset(self::$__done[$way_id][$original_controller])) {
             return $data;
         }
 
         if (isset(self::$__controllers[$controller])) {
             // first tag the controller as done!
-            self::$__done[$original_controller] = true;
+            self::$__done[$way_id][$original_controller] = true;
 
             $control = self::$__controllers[$controller];
 
@@ -972,8 +1025,8 @@ class ways
 
                 foreach ($require as $req) {
                     // check if required controller is done (for performance)
-                    if (!isset(self::$__done[$req])) {
-                        $result = self::call($req, $data, $args, $output, $show_output);
+                    if (!isset(self::$__done[$way_id][$req])) {
+                        $result = self::call($req, $data, $args, $output, $show_output, $way_id);
                         $data = self::cop($data, $result);
                     }
                 }
@@ -1011,7 +1064,7 @@ class ways
 
                 $sum_executed = true;
                 if (isset($control['prop']['type'])) {
-                    if (trim(strtolower($control['prop']['type'])) == 'background') {
+                    if (trim(strtolower($control['prop']['type'])) === 'background') {
                         $sum_executed = false;
                     }
                 }
@@ -1021,15 +1074,18 @@ class ways
                 if ($control['is_closure']) {
                     $closure = $control['closure'];
                     ob_start();
+
                     $result = $closure($data, $args, $control['prop']);
                     $action_output = ob_get_contents();
                     ob_end_clean();
                     $data = self::cop($data, $result);
-                } elseif (class_exists($control['class_name'])) {
-                    ob_start();
-                    $result = $class_name::$action($data, $args, $control['prop']);
-                    $action_output = ob_get_contents();
-                    ob_end_clean();
+                } elseif (class_exists($class_name)) {
+                    if (method_exists($class_name, $action)) {
+                        ob_start();
+                        $result = $class_name::$action($data, $args, $control['prop']);
+                        $action_output = ob_get_contents();
+                        ob_end_clean();
+                    }
                 } else {
                     $result = [];
 
@@ -1078,7 +1134,7 @@ class ways
             }
         }
 
-        self::$__done[$original_controller] = true;
+        // self::$__done[$way_id][$original_controller] = true;
 
         return $data;
     }
@@ -1094,10 +1150,13 @@ class ways
      *
      * @return mixed
      */
-    static function processHooks($hooks, $data, $args, &$output = '', $show_output = false)
+    public static function processHooks($hooks, $data, $args, &$output = '', $show_output = false, $way_id = null)
     {
+        if ($way_id === null) {
+            $way_id = self::getWayId();
+        }
         foreach ($hooks as $call) {
-            if (is_string($call) && isset(self::$__done[$call])) {
+            if (is_string($call) && isset(self::$__done[$way_id][$call])) {
                 continue;
             }
 
@@ -1124,14 +1183,14 @@ class ways
                     echo $action_output;
                 }
             } else {
-                $result = self::call($call, $data, $args, $output, $show_output);
+                $result = self::call($call, $data, $args, $output, $show_output, $way_id);
             }
 
             if (is_scalar($result)) {
                 if (is_string($call)) {
                     $result = [$call => $result];
                 } else {
-                    $result = ["hook-".uniqid() => $result];
+                    $result = ['hook-'.uniqid() => $result];
                 }
             }
 
@@ -1150,7 +1209,7 @@ class ways
      *
      * @return array
      */
-    static function parseWay($way)
+    public static function parseWay($way)
     {
         $result = [
             'methods' => [],
@@ -1160,23 +1219,24 @@ class ways
         $url = parse_url($way);
 
         if (!isset($url['scheme'])) {
-            $url['scheme'] = self::getRequestMethod();
+            $url['scheme'] = '*'; //self::getRequestMethod();
         }
+
         if (!isset($url['host'])) {
             $url['host'] = '';
         }
         if (!isset($url['path'])) {
             $url['path'] = '';
         }
-        if (substr($url['host'], 0, 1) === "/") {
+        if (substr($url['host'], 0, 1) === '/') {
             $url['host'] = substr($url['host'], 1);
         }
-        if (substr($url['path'], 0, 1) == "/") {
+        if (substr($url['path'], 0, 1) === '/') {
             $url['path'] = substr($url['path'], 1);
         }
 
         $result['methods'] = explode('-', strtoupper($url['scheme']));
-        $result['way'] = $url['host']."/".$url['path'];
+        $result['way'] = $url['host'].'/'.$url['path'];
 
         return $result;
     }
@@ -1190,7 +1250,7 @@ class ways
      *
      * @return string
      */
-    static function listen($way, $controller, $properties = [])
+    public static function listen($way, $controller, $properties = [])
     {
         $way = self::parseWay($way);
 
@@ -1200,7 +1260,7 @@ class ways
         }
 
         if (!isset($properties[self::PROPERTY_ID])) {
-            $properties[self::PROPERTY_ID] = uniqid("closure-");
+            $properties[self::PROPERTY_ID] = uniqid('closure-');
         }
 
         if (!isset($properties['type'])) {
@@ -1312,8 +1372,8 @@ class ways
             }
 
             $rules = [];
-            if (isset($prop["rules"])) {
-                $rules = $prop["rules"];
+            if (isset($prop['rules'])) {
+                $rules = $prop['rules'];
 
                 if (!is_array($rules)) {
                     $rules = [$rules];
@@ -1337,11 +1397,12 @@ class ways
      *
      * @return string
      */
-    static function getClassName($path)
+    public static function getClassName($path)
     {
-        $class_name = explode("/", $path);
+        $class_name = explode('/', $path);
         $class_name = $class_name[count($class_name) - 1];
         $class_name = str_replace('.php', '', $class_name);
+
         return $class_name;
     }
 
@@ -1354,7 +1415,7 @@ class ways
      *
      * @return array
      */
-    static function getCodeProperties($path, $prefix, &$namespace = null)
+    public static function getCodeProperties($path, $prefix, &$namespace = null)
     {
         if (!file_exists($path)) {
             return [];
@@ -1415,7 +1476,7 @@ class ways
      *
      * @return mixed
      */
-    static function get($var, $default = null)
+    public static function get($var, $default = null)
     {
         return (isset($_GET[$var])) ? $_GET[$var] : $default;
     }
@@ -1427,7 +1488,7 @@ class ways
      * @param string  $controller
      * @param mixed   $call
      */
-    static function hook($moment, $controller, $call)
+    public static function hook($moment, $controller, $call)
     {
         if (!isset(self::$__hooks[$controller])) {
             self::$__hooks[$controller] = [];
@@ -1453,11 +1514,11 @@ class ways
     {
         $null = null;
 
-        if (is_null($source)) {
+        if ($source === null) {
             return $complement;
         }
 
-        if (is_null($complement)) {
+        if ($complement === null) {
             return $source;
         }
 
@@ -1502,9 +1563,9 @@ class ways
      *
      * @return array
      */
-    static function getCliParams($map = null)
+    public static function getCliParams($map = null)
     {
-        if (is_null(self::$__cli_arguments)) {
+        if (self::$__cli_arguments === null) {
             $params = [];
 
             if (isset($_SERVER['argv'])) {
@@ -1538,7 +1599,7 @@ class ways
             }
 
             $result = $params;
-            if (!is_null($map) && is_array($map)) {
+            if ($map !== null && is_array($map)) {
                 $result = [];
                 foreach ($map as $param) {
                     if (isset($params[$param])) {
@@ -1558,7 +1619,7 @@ class ways
      *
      * @param string $way
      */
-    static function redirect($way)
+    public static function redirect($way)
     {
         header("Location: $way");
         exit();
@@ -1597,7 +1658,7 @@ class ways
     final public static function isCli()
     {
         if (self::$__is_cli === null) {
-            self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() == 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
+            self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() === 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
         }
 
         return self::$__is_cli;

@@ -1,3 +1,47 @@
+Jul 17, 2019
+-------------------
+- fix: check if exists methods, before execute an action
+- improve: * is now for all protocols
+
+```php
+<?php
+
+ways::listen("*", function($data){
+    $data['track'] = 1;
+    return $data;
+});
+
+ways::listen("app://config", function(){
+    $data['config'] = [1,2,3];
+    return $data;
+});
+
+$config = ways::invoke("app://config");
+echo json_encode($config); // {"track":1,"config":[1,2,3]}
+```
+ 
+- improve: new "thread" for invocations: each ways::invoke() 
+is independent an "request". The execution of the PHP script have a main 
+"request id" or "thread id", that is named **WAY ID**
+
+```php
+<?php
+
+ways::listen("app://config", function(){
+    $data['config'] = [1,2,3];
+    return $data;
+});
+
+$config = ways::invoke("app://config");
+echo json_encode($config); // {"track":1,"config":[1,2,3]}
+
+// the second call did not work in 2.2.0 version 
+$config = ways::invoke("app://config"); 
+echo json_encode($config); // {"track":1,"config":[1,2,3]}
+```
+
+- Release 2.3.0 version
+
 Jul 8, 2019
 -------------------
 - Support namespaces! Now `divengine\ways` detect namespace instruction.

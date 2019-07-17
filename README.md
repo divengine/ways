@@ -1,25 +1,50 @@
-﻿# Div PHP Ways 2.2.0
+﻿# Div PHP Ways 2.3.0
 
 A "way" is different to a "route". We need a path for found 
 a specific resource, but we need a way for do something. 
 This library follow this concept when implements the 
 routing and control of PHP application.
 
-With Div Ways you should think more about "control points" 
+With Ways you should think more about "control points" 
 than on controllers of an MVC pattern. Control points are 
 activated when they are needed, ie on demand, depending on 
 the definition you have made.
 
+```php
+<?php
+
+ways::listen('sql://...', function($data, $args){
+    
+	ways::listen('sql://query', function($data){
+	  $pdo = new PDO();
+	  $st = $pdo->prepare($data['query']);
+	  $st->execute($data['params']);
+	  $data['result'] = $st->fetchAll(PDO::FETCH_OBJ);
+	  return $data;
+	});
+	
+});
+
+ways::invoke('sql://query', [
+    'query' => 'SELECT * FROM cats WHERE name = ?',
+    'params' => ['Tom']
+]);
+
+```
+
+
 On other platforms it is common to define all routes to 
-the drivers in the same file and once. In Div Ways this 
-is not an obligation. As you can see in the examples, 
-you can have an initial control point and depending on 
-the URL go to another control point X where routes are 
-defined, so that the path is formed on demand, thus 
-improving performance of its application. The structure 
-of a URL may suggest that Div Ways allows a hierarchical 
-structure of control points, but it does not, it can 
-create a whole graph structure.
+the drivers in the same file and once. In Ways this 
+is not an obligation. You can have an initial control 
+point and depending on the URI invoked go to another 
+control point X where routes are defined, so that the 
+path is formed on demand, thus improving performance 
+of its application. The structure of a URI may suggest 
+that Ways allows a hierarchical structure of control points, 
+but it does not, it can create a whole graph structure.
+
+A first URI is invoked, from HTTP or CLI. But inside your code
+you can invoke any URIs
 
 ![div ways MVC](https://github.com/divengine/resources/raw/master/div-ways/cards/div-ways-mvc-sample.png)
 
@@ -34,8 +59,24 @@ The control points can interact, and this means, redirect
 the flow to another, call control points directly, exchange 
 data and url arguments, handle the output on screen, etc.
 
-Div Ways is not only intended for the web but also for 
-command line applications. Div Ways is implemented in a 
+In addition, you can establish rules for the execution of 
+control points.
+
+```php
+<?php
+
+ways::rule('is-monday', function(){
+    return date('D') === 'Mon';
+});
+
+ways::listen('*', function (){
+    echo 'Today is Monday !!!';
+}, [ways::PROPERTY_RULES => ['is-monday']]);
+
+```
+
+Ways is not only intended for the web but also for 
+command line applications. Ways is implemented in a 
 single class, in a single file. This allows quick start-up
 and easy adaptation with other platforms.
 
