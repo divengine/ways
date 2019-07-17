@@ -1,7 +1,7 @@
 Jul 17, 2019
 -------------------
-- fix: check if exists methods, before execute an action
-- improve: * is now for all protocols
+- `fix`: check if exists methods, before execute an action
+- `improve`: The * pattern is now for all protocols.
 
 ```php
 <?php
@@ -20,9 +20,9 @@ $config = ways::invoke("app://config");
 echo json_encode($config); // {"track":1,"config":[1,2,3]}
 ```
  
-- improve: new "thread" for invocations: each ways::invoke() 
-is independent an "request". The execution of the PHP script have a main 
-"request id" or "thread id", that is named **WAY ID**
+- `improve`: Independent "ways" for invocations: The execution of the PHP script 
+(CLI or HTTP) have a main "request id" or "thread id", that is named **WAY ID**. 
+Then each ways::invoke() have their own way id. 
 
 ```php
 <?php
