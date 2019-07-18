@@ -2,6 +2,8 @@
 
 namespace divengine;
 
+use RuntimeException;
+
 /**
  * Div PHP Ways
  *
@@ -85,6 +87,8 @@ class ways
 
     private static $__way_id;
 
+    private static $__current_way_id;
+
     /**
      * Get current version
      *
@@ -165,7 +169,7 @@ class ways
             }
         }
 
-        if ($uri == '') {
+        if ($uri === '') {
             $uri = '/';
         }
 
@@ -182,10 +186,11 @@ class ways
      * @param string  $request_method
      *
      * @return array
-     * @throws \Exception
+     * @throws RuntimeException
      */
     public static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
     {
+
         if (is_array($way_var)) {
             if (isset($way_var['request_method'])) {
                 $request_method = $way_var['request_method'];
@@ -212,7 +217,11 @@ class ways
         $way = self::getCurrentWay($way_var, $default_way, $request_method);
         self::$__executed = 0;
 
-        return self::callAll($way, $output, $show_output, $request_method, $default_way);
+        if (self::$__current_way_id === null) {
+            self::$__current_way_id = self::getWayId();
+        }
+
+        return self::callAll($way, $output, $show_output, $request_method, $default_way, [], self::$__current_way_id);
     }
 
     /**
@@ -225,7 +234,7 @@ class ways
         if (self::$__request_method === null) {
             self::$__request_method = 'GET';
 
-            if (php_sapi_name() === 'cli') {
+            if (PHP_SAPI === 'cli') {
                 self::$__request_method = 'CLI';
             }
 
@@ -387,12 +396,17 @@ class ways
      * @param string $output
      *
      * @return array
-     * @throws \Exception
+     * @throws RuntimeException
      */
     public static function invoke($way, $data = [], &$output = '')
     {
         $way_id = self::getWayId(true);
-        return self::callAll($way, $output, true, null, '/', $data, $way_id);
+        $save = self::$__current_way_id;
+        self::$__current_way_id = $way_id;
+        $result = self::callAll($way, $output, true, null, '/', $data, $way_id);
+        self::$__current_way_id = $save;
+
+        return $result;
     }
 
     /**
@@ -418,16 +432,16 @@ class ways
     /**
      * Call all controllers
      *
-     * @param mixed  $way
+     * @param mixed   $way
      * @param string  $output
      * @param boolean $show_output
      * @param string  $request_method
      * @param string  $default_way
-     *
      * @param array   $data
+     * @param string  $way_id
      *
      * @return array
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     public static function callAll($way, &$output = '', $show_output = true, $request_method = null, $default_way = '/', $data = [], $way_id = null)
     {
@@ -486,19 +500,32 @@ class ways
                     $controllers = [];
 
                     if (isset($methods['*'])) {
-                        $controllers = array_merge($methods['*']);
+                        // Since the elements in $methods['*'] have the same
+                        // keys( or numeric indices ) as those in $controllers,
+                        // those elements in $methods['*'] are ignored by the union operator.
+
+                        $controllers += $methods['*']; // dont use array_merge because merging arrays in a loop is slow and causes high CPU usage.
+                        // https://github.com/kalessil/phpinspectionsea/blob/master/docs/performance.md#slow-array-function-used-in-loop
                     }
 
                     if (isset($methods[$req_method])) {
-                        $controllers = array_merge($methods[$req_method]);
+                        $controllers += $methods[$req_method];
                     }
 
-                    foreach ($controllers as $controller) {
+                    foreach ($controllers as &$controller) { // great fix ! type the & before
                         if (!isset(self::$__done[$way_id][$controller])) {
-
                             $result = self::call($controller, $data, $args, $output, $show_output, $way_id);
-
                             $data = self::cop($data, $result);
+
+                            // great fix ! Update again $controllers
+                            // in previous self::call new controller could be added
+                            if (isset($methods['*'])) {
+                                $controllers += $methods['*'];
+                            }
+
+                            if (isset($methods[$req_method])) {
+                                $controllers += $methods[$req_method];
+                            }
 
                             if (!isset(self::$__args_by_controller[$way_id])) {
                                 self::$__args_by_controller[$way_id] = [];
@@ -608,12 +635,12 @@ class ways
             if ($star === false) {
                 $star = -1;
             }
-            if ($bracket == -1 && $star == -1) {
+            if ($bracket === -1 && $star === -1) {
                 $new_way .= $way;
                 break;
             }
 
-            if ($bracket < $star || $star == -1) {
+            if ($bracket < $star || $star === -1) {
                 $p = $bracket; // first open bracket
                 $new_way .= substr($way, 0, $p).'/';
                 $new_way = self::clearDoubleSlashes($new_way);
@@ -627,11 +654,11 @@ class ways
                 $ch = substr($pattern, $p1 + 1, 1); // next char from close bracket
 
                 $p3 = false;
-                if (isset($way[$p]) && !empty($ch)) {
+                if (!empty($ch) && isset($way[$p])) {
                     $p3 = @strpos($way, $ch, $p);
                 }
 
-                if ($p3 == false) {
+                if ($p3 === false) {
                     $new_way .= substr($way, $p);
                     $way = '';
                 } else {
@@ -647,6 +674,8 @@ class ways
                 $new_way .= substr($way, 0, $p).'/';
                 $new_way = self::clearDoubleSlashes($new_way);
 
+                // can be changed with $pattern[$p+1] ?? '' but dont work in php 5.4
+                // and if $p > length of $pattern - 1, will be an error
                 $ch = substr($pattern, $p + 1, 1); // next char from close bracket
 
                 $p3 = false;
@@ -654,7 +683,7 @@ class ways
                     $p3 = strpos($way, $ch, $p);
                 }
 
-                if ($p3 == false) {
+                if ($p3 === false) {
                     $new_way .= substr($way, $p);
                     $way = '';
                 } else {
@@ -680,20 +709,17 @@ class ways
      * @param bool  $normalizeWay
      *
      * @return bool
-     * @throws Exception
+     * @throws \RuntimeException
      */
     private static function matchInternal($pattern, $way, &$args = [], $normalizeWay = true)
     {
-        $original_pattern = $pattern;
-        $original_way = $way;
-
         $pattern = self::clearDoubleSlashes(self::clearSideSlashes($pattern));
         if ($pattern === '*' || $pattern === '...') {
             return true;
         }
 
         $way = self::clearDoubleSlashes(self::clearSideSlashes($way));
-        if ($pattern == $way) {
+        if ($pattern === $way) {
             return true;
         }
 
@@ -734,7 +760,7 @@ class ways
 
         // pattern prefix "a/b/c/..."
         if ($array_pattern[0] !== '...' && $array_pattern[$count_pattern - 1] === '...') {
-            $s = substr($pattern, 0, strlen($pattern) - 3);
+            $s = substr($pattern, 0, -3);
             $p = strpos($way, $s);
 
             if ($p === 0) {
@@ -745,9 +771,9 @@ class ways
             $new_way = '';
             $j = 0;
             for ($i = 0; $i < $array_pattern_count - 1; $i++) {
-                $new_pattern = $new_pattern.'/'.$array_pattern[$i];
+                $new_pattern .= $array_pattern[$i].'/';
                 if (isset($away[$j])) {
-                    $new_way = $new_way.'/'.$away[$j];
+                    $new_way .= $away[$j].'/';
                     $j++;
                 }
             }
@@ -757,13 +783,13 @@ class ways
 
         // pattern prefix and suffix ".../a/b/c/..."
         if ($array_pattern[0] === '...' && $array_pattern[$count_pattern - 1] === '...') {
-            $s = substr($pattern, 0, strlen($pattern) - 3);
+            $s = substr($pattern, 0, -3);
             $s = substr($s, 3);
             // $s begin and finish with '/', --> /a/b/c/
 
             $p = strpos($way, $s);
 
-            if ($p !== 0 && $p !== strlen($way) - strlen($s) && $p !== false) {
+            if ($p !== false && $p !== 0 && $p !== strlen($way) - strlen($s)) {
                 return true;
             }
 
@@ -787,7 +813,7 @@ class ways
 
                         $part_pattern = $array_pattern[$i];
 
-                        if ($away[$j + $i - 1] == $part_pattern) {
+                        if ($away[$j + $i - 1] === $part_pattern) {
                             $matches++;
                         } elseif ($part_pattern[0] === '{' && substr($part_pattern, -1) === '}') {
                             $arg = substr($part_pattern, 1, -1);
@@ -828,7 +854,7 @@ class ways
         // for example: a/b/c, a/b/*, a/*/c, */b/c, */b/*, */*/*,
         // a/*/*, */*/c
 
-        if (count($away) != count($array_pattern)) {
+        if (count($away) !== count($array_pattern)) {
             return false;
         }
 
@@ -841,19 +867,17 @@ class ways
 
             $part_pattern = $array_pattern[$key];
 
-            if (isset($part_pattern[2])) {
-                if ($part_pattern[0] === '{' && substr($part_pattern, -1) === '}') {
-                    $arg = substr($part_pattern, 1, -1);
-                    $value_match = self::argChecker($arg, $part, $arg);
+            if (isset($part_pattern[2]) && $part_pattern[0] === '{' && substr($part_pattern, -1) === '}') {
+                $arg = substr($part_pattern, 1, -1);
+                $value_match = self::argChecker($arg, $part, $arg);
 
-                    if ($value_match) {
-                        $args[$arg] = $part;
-                        continue;
-                    }
+                if ($value_match) {
+                    $args[$arg] = $part;
+                    continue;
                 }
             }
 
-            if ($part != $part_pattern && $part_pattern !== '*') {
+            if ($part !== $part_pattern && $part_pattern !== '*') {
                 $result = false;
                 break;
             }
@@ -868,11 +892,10 @@ class ways
      * @param string $pattern
      * @param string $way
      * @param array  $args
-     * @param bool
      *
      * @return boolean
      *
-     * @throws Exception
+     * @throws RuntimeException
      */
     public static function match($pattern, $way = null, &$args = [])
     {
@@ -881,8 +904,9 @@ class ways
             $way = self::getCurrentWay();
         }
 
-        $result = self::matchInternal($pattern, $way, $args, true);
-        if ($result == false) {
+        $result = self::matchInternal($pattern, $way, $args);
+
+        if ($result === false) {
             $result = self::matchInternal($pattern, $way, $args, false);
         }
 
@@ -900,7 +924,7 @@ class ways
      * @param string $arg
      *
      * @return bool
-     * @throws \Exception
+     * @throws \RuntimeException
      */
     public static function argChecker($pattern, $arg_value, &$arg)
     {
@@ -909,27 +933,19 @@ class ways
         }
 
         $value_match = true;
-
-        if (strpos($pattern, '|') !== false) {
-            $arg_parts = explode('|', $pattern);
-            $arg = $arg_parts[0];
-            $checker = $arg_parts[1];
-
+        if (strpos($pattern, '|') !== false) { // important !
+            list($arg, $checker) = explode('|', $pattern);
             if (is_callable($checker)) {
-                if (strpos($checker, '::') !== false) {
-                    $checker_parts = explode('::', $checker);
-                    $checker_class = $checker_parts[0];
-                    $checker_method = $checker_parts[1];
+                if (strpos($checker, '::') !== false) { // important !
+                    list ($checker_class, $checker_method) = explode('::', $checker);
                     $value_match = $checker_class::$checker_method($arg_value);
+                } elseif ($checker === 'is_bool') {
+                    $value_match = (strtolower($arg_value) === 'true' || $arg_value === 1);
                 } else {
-                    if ($checker === 'is_bool') {
-                        $value_match = strtolower($arg_value) === 'true' || $arg_value == 1 ? true : false;
-                    } else {
-                        $value_match = $checker($arg_value);
-                    }
+                    $value_match = $checker($arg_value);
                 }
             } else {
-                throw new Exception("Argument checker $checker is not callable");
+                throw new RuntimeException("Argument checker $checker is not callable");
             }
         }
 
@@ -945,6 +961,8 @@ class ways
      * @param string  $output
      * @param boolean $show_output
      *
+     * @param string  $way_id
+     *
      * @return mixed
      */
     public static function call($controller, $data = [], $args = [], &$output = '', $show_output = false, $way_id = null)
@@ -959,10 +977,8 @@ class ways
         $action = 'Run';
 
         $ignore_properties = false;
-        if (strpos($controller, '@')) {
-            $arr = explode('@', $controller);
-            $controller = $arr[0];
-            $action = $arr[1];
+        if (strpos($controller, '@')) { // important!
+            list($controller, $action) = explode('@', $controller);
             $ignore_properties = true;
         }
 
@@ -1009,11 +1025,9 @@ class ways
 
             $class_name = $control['class_name'];
 
-            if (!$ignore_properties) {
-                // check for custom method
-                if (isset($control['prop']['method'])) {
-                    $action = $control['prop']['method'];
-                }
+            // check for custom method
+            if (!$ignore_properties && isset($control['prop']['method'])) {
+                $action = $control['prop']['method'];
             }
 
             if (isset($control['prop']['require'])) {
@@ -1037,7 +1051,7 @@ class ways
                 $hooks = self::$__hooks[$controller];
             }
 
-            if (file_exists($control['path']) || $control['is_closure']) {
+            if ($control['is_closure'] || file_exists($control['path'])) {
 
                 // hook before include
                 if (isset($hooks[DIV_WAYS_BEFORE_INCLUDE])) {
@@ -1061,34 +1075,22 @@ class ways
                 }
 
                 // running...
-
-                $sum_executed = true;
-                if (isset($control['prop']['type'])) {
-                    if (trim(strtolower($control['prop']['type'])) === 'background') {
-                        $sum_executed = false;
-                    }
-                }
-
+                $sum_executed = !(isset($control['prop']['type']) && strtolower(trim($control['prop']['type'])) === 'background');
                 $action_output = '';
-
+                $result = [];
                 if ($control['is_closure']) {
                     $closure = $control['closure'];
                     ob_start();
-
                     $result = $closure($data, $args, $control['prop']);
-                    $action_output = ob_get_contents();
-                    ob_end_clean();
+                    $action_output = ob_get_clean();
                     $data = self::cop($data, $result);
                 } elseif (class_exists($class_name)) {
                     if (method_exists($class_name, $action)) {
                         ob_start();
                         $result = $class_name::$action($data, $args, $control['prop']);
-                        $action_output = ob_get_contents();
-                        ob_end_clean();
+                        $action_output = ob_get_clean();
                     }
                 } else {
-                    $result = [];
-
                     // hook before output
                     if (isset($hooks[DIV_WAYS_BEFORE_OUTPUT])) {
                         $result = self::processHooks($hooks[DIV_WAYS_BEFORE_OUTPUT], $data, $args, $output, $show_output);
@@ -1099,8 +1101,7 @@ class ways
                     if (function_exists($action)) {
                         ob_start();
                         $result = $action($data, $args);
-                        $action_output = ob_get_contents();
-                        ob_end_clean();
+                        $action_output = ob_get_clean();
                     } else
                         // if not exists a class::method and not exists a function, then output is the include output
                         // and action output is empty
@@ -1147,6 +1148,7 @@ class ways
      * @param array   $args
      * @param string  $output
      * @param boolean $show_output
+     * @param string  $way_id
      *
      * @return mixed
      */
@@ -1162,17 +1164,10 @@ class ways
 
             if (is_callable($call)) {
                 ob_start();
-                if (is_string($call)) {
-                    if (strpos($call, '::') !== false) {
-                        $arr = explode('::', $call);
-                        $call_class = $arr[0];
-                        $call_method = $arr[1];
-                        $result = $call_class::$call_method($data, $args);
-                        $action_output = ob_get_contents();
-                    } else {
-                        $result = $call($data, $args);
-                        $action_output = ob_get_contents();
-                    }
+                if (is_string($call) && strpos($call, '::') !== false) {
+                    list($call_class, $call_method) = explode('::', $call);
+                    $result = $call_class::$call_method($data, $args);
+                    $action_output = ob_get_contents();
                 } else {
                     $result = $call($data, $args);
                     $action_output = ob_get_contents();
@@ -1190,7 +1185,7 @@ class ways
                 if (is_string($call)) {
                     $result = [$call => $result];
                 } else {
-                    $result = ['hook-'.uniqid() => $result];
+                    $result = ['hook-'.uniqid('', true) => $result];
                 }
             }
 
@@ -1205,7 +1200,7 @@ class ways
     /**
      * Parse a way
      *
-     * @param $way
+     * @param string $way
      *
      * @return array
      */
@@ -1228,10 +1223,10 @@ class ways
         if (!isset($url['path'])) {
             $url['path'] = '';
         }
-        if (substr($url['host'], 0, 1) === '/') {
+        if (strpos($url['host'], '/') === 0) {
             $url['host'] = substr($url['host'], 1);
         }
-        if (substr($url['path'], 0, 1) === '/') {
+        if (strpos($url['path'], '/') === 0) {
             $url['path'] = substr($url['path'], 1);
         }
 
@@ -1244,15 +1239,15 @@ class ways
     /**
      * Listen way
      *
-     * @param string $way
+     * @param string $pattern
      * @param string $controller
      * @param mixed  $properties
      *
      * @return string
      */
-    public static function listen($way, $controller, $properties = [])
+    public static function listen($pattern, $controller, $properties = [])
     {
-        $way = self::parseWay($way);
+        $way = self::parseWay($pattern);
 
         // $properties is the ID when is a string
         if (is_string($properties)) {
@@ -1260,7 +1255,7 @@ class ways
         }
 
         if (!isset($properties[self::PROPERTY_ID])) {
-            $properties[self::PROPERTY_ID] = uniqid('closure-');
+            $properties[self::PROPERTY_ID] = uniqid('closure-', true);
         }
 
         if (!isset($properties['type'])) {
@@ -1279,7 +1274,7 @@ class ways
             }
         }
 
-        if (is_callable($controller) && !is_string($controller)) {
+        if (!is_string($controller) && is_callable($controller)) {
             self::$__controllers[$properties[self::PROPERTY_ID]] = [
                 'class_name' => null,
                 'prop'       => $properties,
@@ -1306,7 +1301,7 @@ class ways
      */
     public static function register($path, $properties = [])
     {
-        if (!file_exists($path) && file_exists(PACKAGES."$path")) {
+        if (!file_exists($path) && file_exists(PACKAGES.$path)) {
             $path = PACKAGES.$path;
         }
 
@@ -1339,7 +1334,6 @@ class ways
                 $method = trim(substr($key.' ', 7));
                 $action = $prop[self::PROPERTY_ID].'@'.$method;
 
-                $rules = [];
                 if (isset($prop["rules@{$method}"])) {
                     $rules = $prop["rules@{$method}"];
                     if (!is_array($rules)) {
@@ -1371,7 +1365,6 @@ class ways
                 ];
             }
 
-            $rules = [];
             if (isset($prop['rules'])) {
                 $rules = $prop['rules'];
 
@@ -1421,7 +1414,7 @@ class ways
             return [];
         }
 
-        $f = fopen($path, 'r');
+        $f = fopen($path, 'rb');
 
         $property_value = null;
 
@@ -1440,14 +1433,14 @@ class ways
                 $namespace = trim(substr($s, 9, -1));
             }
 
-            if (strtolower(substr($s, 0, $l)) == strtolower($prefix)) {
+            if (stripos($s, strtolower($prefix)) === 0) {
                 $s = substr($s, $l);
                 $s = trim($s);
                 $p = strpos($s, '=');
                 if ($p !== false) {
                     $property_name = trim(substr($s, 0, $p));
                     $property_value = substr($s, $p + 1);
-                    if ($property_name != '') {
+                    if ($property_name !== '') {
                         if (isset($prop[$property_name])) {
                             if (!is_array($prop[$property_name])) {
                                 $prop[$property_name] = [
@@ -1478,7 +1471,7 @@ class ways
      */
     public static function get($var, $default = null)
     {
-        return (isset($_GET[$var])) ? $_GET[$var] : $default;
+        return isset($_GET[$var]) ? $_GET[$var] : $default;
     }
 
     /**
@@ -1581,7 +1574,7 @@ class ways
 
                     $arg = trim($_SERVER['argv'][$i]);
                     if (isset($arg[0])) {
-                        if ($arg[0] == '-') {
+                        if (strpos($arg, '-') === 0) {
                             $params[$arg] = true;
                             $last_key = $arg;
                         } else {
@@ -1658,7 +1651,7 @@ class ways
     final public static function isCli()
     {
         if (self::$__is_cli === null) {
-            self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (php_sapi_name() === 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
+            self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (PHP_SAPI === 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
         }
 
         return self::$__is_cli;
