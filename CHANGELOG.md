@@ -1,7 +1,7 @@
 Jul 17, 2019
 -------------------
 - `fix`: check if exists methods, before execute an action
-- `improve`: The * pattern is now for all protocols.
+- `improvement`: The * pattern is now for all protocols.
 
 ```php
 <?php
@@ -20,7 +20,7 @@ $config = ways::invoke("app://config");
 echo json_encode($config); // {"track":1,"config":[1,2,3]}
 ```
  
-- `improve`: Independent "ways" for invocations: The execution of the PHP script 
+- `improvement`: Independent "ways" for invocations: The execution of the PHP script 
 (CLI or HTTP) have a main "request id" or "thread id", that is named **WAY ID**. 
 Then each ways::invoke() have their own way id. 
 
@@ -209,7 +209,7 @@ divengine\ways::listen("documentation/chapter-{id|is_int}", function($data, $arg
 
  ```
 - better control of the ways (executing single instance of each controller)
-- improve example
+- improvement example
 - release 1.2
 
 Sep 18, 2017
@@ -224,12 +224,12 @@ Sep 18, 2017
     });
 ```
 
-- improve example
+- improvement example
 - drop the obsolete bulkRegister
 
 Sep 17, 2017
 -------------------
-- improve/fix match() method
+- improvement/fix match() method
 - capture URL arguments
 
 ```php
