@@ -85,9 +85,14 @@ class ways
 
     private static $__rules = [];
 
+    /** @var string The main way of your app */
     private static $__way_id;
 
+    /** @var string The current way (each invoke generate new way id) */
     private static $__current_way_id;
+
+    /** @var array Current data on the way */
+    private static $__current_data = [];
 
     /**
      * Get current version
@@ -97,6 +102,63 @@ class ways
     public function getVersion()
     {
         return self::$__version;
+    }
+
+    /**
+     * Get id of current way
+     *
+     * @return string
+     */
+    public static function getCurrentWayId()
+    {
+        if (self::$__current_way_id === null) {
+            self::$__current_way_id = self::getWayId();
+        }
+
+        return self::$__current_way_id;
+    }
+
+    /**
+     * Get data of current way
+     *
+     * @param string $way_id
+     *
+     * @return mixed
+     */
+    public static function getCurrentData($way_id = null)
+    {
+        if ($way_id === null) {
+            $way_id = self::getCurrentWayId();
+        }
+
+        if (!isset(self::$__current_data[$way_id])) {
+            self::$__current_data[$way_id] = [];
+        }
+
+        return self::$__current_data[$way_id];
+    }
+
+    /**
+     * Update current data
+     *
+     * @param mixed  $data
+     * @param string $way_id
+     *
+     * @return mixed
+     */
+    public static function updateCurrentData($data, $way_id = null)
+    {
+        if ($way_id === null) {
+            $way_id = self::getCurrentWayId();
+        }
+
+        if (!isset(self::$__current_data[$way_id])) {
+            self::$__current_data[$way_id] = [];
+        }
+
+        self::$__current_data[$way_id] = self::cop(self::$__current_data[$way_id], $data);
+
+        return self::$__current_data[$way_id];
     }
 
     /**
@@ -190,7 +252,6 @@ class ways
      */
     public static function bootstrap($way_var = null, $default_way = null, &$output = '', $show_output = true, $request_method = null)
     {
-
         if (is_array($way_var)) {
             if (isset($way_var['request_method'])) {
                 $request_method = $way_var['request_method'];
@@ -217,19 +278,15 @@ class ways
         $way = self::getCurrentWay($way_var, $default_way, $request_method);
         self::$__executed = 0;
 
-        if (self::$__current_way_id === null) {
-            self::$__current_way_id = self::getWayId();
-        }
-
-        return self::callAll($way, $output, $show_output, $request_method, $default_way, [], self::$__current_way_id);
+        return self::callAll($way, $output, $show_output, $request_method, $default_way, [], self::getCurrentWayId());
     }
 
     /**
-     * Get request method from env
+     * Get request method from environment
      *
      * @return string
      */
-    public static function getRequestMethod()
+    public static function getEnvironmentRequestMethod()
     {
         if (self::$__request_method === null) {
             self::$__request_method = 'GET';
@@ -244,6 +301,16 @@ class ways
         }
 
         return self::$__request_method;
+    }
+
+    /**
+     * Get request method
+     *
+     * @return string
+     */
+    public static function getRequestMethod(){
+        // TODO: return the method of current way ?
+        return self::getEnvironmentRequestMethod();
     }
 
     /**
@@ -321,7 +388,7 @@ class ways
         }
 
         if ($request_method === null) {
-            $request_method = self::getRequestMethod();
+            $request_method = self::getEnvironmentRequestMethod();
         }
 
         // checking for current way
@@ -350,12 +417,17 @@ class ways
             if ($way === null || empty($way) || $way === '/') {
                 $way = $default_way;
             }
-
-            self::$__current_way = $way;
+            self::$__current_way = str_replace('///', '//', $request_method.'://'.$way);
         }
 
         // if default_way is forced to "/", this will return "/"
-        if (self::$__current_way === '/') {
+        $uri = parse_url(self::$__current_way);
+        if ($uri === false || (!isset($uri['path']) && !isset($uri['host']))) {
+            $uri = parse_url($default_way);
+            if (isset($uri['scheme'])) {
+                $default_way = str_replace('///', '//', $request_method.'://'.$default_way);
+            }
+
             return $default_way;
         }
 
@@ -400,12 +472,25 @@ class ways
      */
     public static function invoke($way, $data = [], &$output = '')
     {
+        // generate new way
         $way_id = self::getWayId(true);
-        $save = self::$__current_way_id;
-        self::$__current_way_id = $way_id;
-        $result = self::callAll($way, $output, true, null, '/', $data, $way_id);
-        self::$__current_way_id = $save;
 
+        // save current status
+        $save = self::$__current_way_id;
+        $save_current_way = self::$__current_way;
+
+        // change current status
+        self::$__current_way = $way;
+        self::$__current_way_id = $way_id;
+
+        // call to all control points
+        $result = self::callAll($way, $output, true, null, '/', $data, $way_id);
+
+        // restore status
+        self::$__current_way_id = $save;
+        self::$__current_way = $save_current_way;
+
+        // return resulting data
         return $result;
     }
 
@@ -452,7 +537,7 @@ class ways
 
         if (is_array($way)) {
             if (isset($way['data'])) {
-                $data = $way['data'];
+                $data = self::cop($way['data'], $data);
             }
             if (isset($way['default_way'])) {
                 $default_way = $way['default_way'];
@@ -468,7 +553,7 @@ class ways
             }
         }
 
-        $default_method = self::getRequestMethod();
+        $default_method = self::getEnvironmentRequestMethod();
         $request_methods = [];
 
         $way = self::parseWay($way);
@@ -500,31 +585,32 @@ class ways
                     $controllers = [];
 
                     if (isset($methods['*'])) {
-                        // Since the elements in $methods['*'] have the same
-                        // keys( or numeric indices ) as those in $controllers,
-                        // those elements in $methods['*'] are ignored by the union operator.
-
-                        $controllers += $methods['*']; // dont use array_merge because merging arrays in a loop is slow and causes high CPU usage.
-                        // https://github.com/kalessil/phpinspectionsea/blob/master/docs/performance.md#slow-array-function-used-in-loop
+                        $controllers = array_unique(array_merge($controllers, $methods['*']));
                     }
 
                     if (isset($methods[$req_method])) {
-                        $controllers += $methods[$req_method];
+                        $controllers = array_unique(array_merge($controllers, $methods[$req_method]));
                     }
 
                     foreach ($controllers as &$controller) { // great fix ! type the & before
                         if (!isset(self::$__done[$way_id][$controller])) {
+
+                            // call to control point
                             $result = self::call($controller, $data, $args, $output, $show_output, $way_id);
                             $data = self::cop($data, $result);
 
+                            // update current data on the way
+                            self::updateCurrentData($data, $way_id);
+
                             // great fix ! Update again $controllers
-                            // in previous self::call new controller could be added
+                            // in previous self::call a new controller could be added
+
                             if (isset($methods['*'])) {
-                                $controllers += $methods['*'];
+                                $controllers = array_unique(array_merge($controllers, $methods['*']));
                             }
 
                             if (isset($methods[$req_method])) {
-                                $controllers += $methods[$req_method];
+                                $controllers = array_unique(array_merge($controllers, $methods[$req_method]));
                             }
 
                             if (!isset(self::$__args_by_controller[$way_id])) {
@@ -899,7 +985,7 @@ class ways
      */
     public static function match($pattern, $way = null, &$args = [])
     {
-
+        //echo "MATCH $pattern - $way \n";
         if ($way === null) {
             $way = self::getCurrentWay();
         }
@@ -1063,6 +1149,7 @@ class ways
                 if (!$control['is_closure']) {
                     ob_start();
                     include_once $control['path'];
+                    $data = self::getCurrentData(); // great fix!
                     $include_output = ob_get_contents();
                     $output .= $include_output;
                     ob_end_clean();
@@ -1214,7 +1301,7 @@ class ways
         $url = parse_url($way);
 
         if (!isset($url['scheme'])) {
-            $url['scheme'] = '*'; //self::getRequestMethod();
+            $url['scheme'] = self::getEnvironmentRequestMethod();
         }
 
         if (!isset($url['host'])) {
@@ -1249,6 +1336,10 @@ class ways
     {
         $way = self::parseWay($pattern);
 
+        if ($pattern === '*') {
+            $way['methods'][0] = '*';
+        }
+        //print_r($way);
         // $properties is the ID when is a string
         if (is_string($properties)) {
             $properties = [self::PROPERTY_ID => $properties];
@@ -1662,8 +1753,8 @@ class ways
     /**
      * Output a JSON REST response
      *
-     * @param     $data
-     * @param int $http_response_code
+     * @param mixed $data
+     * @param int   $http_response_code
      */
     public static function rest($data, $http_response_code = 200)
     {

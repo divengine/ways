@@ -1,3 +1,10 @@
+Jul 18, 2019
+-------------------
+- `fix`. Fix lost data resulting from "file control points"
+- `fix`. Other fixes for nested calls of control points
+- `fix`. Other minor fixes
+- `release`. Urgent release 2.3.1!
+
 Jul 17, 2019
 -------------------
 - `fix`: fix nested calls of control points
