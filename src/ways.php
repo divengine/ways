@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.3.0
+ * @version 2.3.1
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -57,7 +57,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.3.0';
+    private static $__version = '2.3.1';
 
     private static $__way_var;
 
