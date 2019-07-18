@@ -1,5 +1,6 @@
 Jul 17, 2019
 -------------------
+- `fix`: fix nested calls of control points
 - `fix`: check if exists methods, before execute an action
 - `improvement`: The * pattern is now for all protocols.
 
