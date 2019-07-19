@@ -5,6 +5,10 @@ a specific resource, but we need a way for do something.
 This library follow this concept when implements the 
 routing and control of PHP application.
 
+Ways is a class that adapts the concept of SOA to the architecture 
+of a PHP application, and tries to integrate the parts of a hybrid 
+system. 
+
 With Ways you should think more about "control points" 
 than on controllers of an MVC pattern. Control points are 
 activated when they are needed, ie on demand, depending on 
