@@ -1,3 +1,8 @@
+Jul 23, 2019
+-------------------
+- `fix`: bug fix in rules
+- `release`: version 2.3.2
+
 Jul 18, 2019
 -------------------
 - `fix`. Fix lost data resulting from "file control points"
