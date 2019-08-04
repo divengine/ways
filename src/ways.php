@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.3.2
+ * @version 2.3.3
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -57,7 +57,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.3.2';
+    private static $__version = '2.3.3';
 
     private static $__way_var;
 
@@ -278,7 +278,8 @@ class ways
         $way = self::getCurrentWay($way_var, $default_way, $request_method);
         self::$__executed = 0;
 
-        return self::callAll($way, $output, $show_output, $request_method, $default_way, [], self::getCurrentWayId());
+        $data = self::getCurrentData();
+        return self::callAll($way, $output, $show_output, $request_method, $default_way, $data, self::getCurrentWayId());
     }
 
     /**
@@ -482,6 +483,8 @@ class ways
         // change current status
         self::$__current_way = $way;
         self::$__current_way_id = $way_id;
+
+        self::updateCurrentData($data, $way_id);
 
         // call to all control points
         $result = self::callAll($way, $output, true, null, '/', $data, $way_id);
@@ -985,7 +988,6 @@ class ways
      */
     public static function match($pattern, $way = null, &$args = [])
     {
-        //echo "MATCH $pattern - $way \n";
         if ($way === null) {
             $way = self::getCurrentWay();
         }
@@ -1149,7 +1151,8 @@ class ways
                 if (!$control['is_closure']) {
                     ob_start();
                     include_once $control['path'];
-                    $data = self::getCurrentData(); // great fix!
+                    $result = self::getCurrentData(); // great fix!
+                    $data = self::cop($data, $result);
                     $include_output = ob_get_contents();
                     $output .= $include_output;
                     ob_end_clean();
@@ -1339,7 +1342,7 @@ class ways
         if ($pattern === '*') {
             $way['methods'][0] = '*';
         }
-        //print_r($way);
+
         // $properties is the ID when is a string
         if (is_string($properties)) {
             $properties = [self::PROPERTY_ID => $properties];
