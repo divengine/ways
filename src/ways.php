@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.3.3
+ * @version 2.3.4
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -57,7 +57,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.3.3';
+    private static $__version = '2.3.4';
 
     private static $__way_var;
 
@@ -1091,9 +1091,12 @@ class ways
                 $method = "{$controller}@{$action}";
                 if (isset($rules[$method])) {
                     $rules = $rules[$method];
-                    if (is_string($rules)) {
-                        $rules = [$rules];
-                    }
+                } elseif (isset($rules[$action])) {
+                    $rules = $rules[$action];
+                }
+
+                if (is_string($rules)) {
+                    $rules = [$rules];
                 }
 
                 foreach ($rules as $rule) {
@@ -1469,9 +1472,13 @@ class ways
                 if (!is_array($rules)) {
                     $rules = [$rules];
                 }
+
                 foreach ($rules as $rule) {
+                    if (!is_array(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]))
+                        self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [];
                     self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]['Run'][] = $rule;
                 }
+
             }
 
 

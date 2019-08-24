@@ -1,7 +1,13 @@
-Aug 23, 2019
+Aug 24, 2019
+-------------------
+- `fix`: rules for default action Run
+- `release`: version 2.3.4
+
+Jul 23, 2019
 -------------------
 - `fix`: fix flow of the data before bootstrap and invoke
 - `release`: version 2.3.3
+
 Jul 23, 2019
 -------------------
 - `fix`: bug fix in rules
