@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.3.3
+ * @version 2.4.0
  *
  * @link    https://divengine.com
  * @link    https://divengine.com/ways
@@ -57,7 +57,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.3.3';
+    private static $__version = '2.4.0';
 
     private static $__way_var;
 
@@ -1099,7 +1099,7 @@ class ways
                 foreach ($rules as $rule) {
                     $check = true;
                     if (is_string($rule) && array_key_exists($rule, self::$__rules)) {
-                        $check = self::checkRule($rule);
+                        $check = self::checkRule($rule, $data, $args);
                     } elseif (is_callable($rule)) {
                         $check = $rule();
                     }
@@ -1734,11 +1734,11 @@ class ways
      *
      * @return bool
      */
-    public static function checkRule($ruleName)
+    public static function checkRule($ruleName, $data, $args)
     {
         $rule = self::$__rules[$ruleName];
 
-        return (bool)$rule();
+        return (bool) $rule($data, $args);
     }
 
     /**

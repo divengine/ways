@@ -1,3 +1,21 @@
+Dec 12, 2019
+-------------------
+- `new`: passing data and args to rules
+
+```php
+<?php
+
+ways::rule('is-admin-section', function($data, $args){
+    return $args['section'] === 'admin';
+});
+
+ways::listen("/{section}/login", function(){
+    echo "admin login";
+}, ['rules' => ['is-admin-section']]);
+
+```
+- `release`: version 2.4.0
+
 Aug 23, 2019
 -------------------
 - `fix`: fix flow of the data before bootstrap and invoke
