@@ -1,7 +1,6 @@
 Dec 12, 2019
 -------------------
 - `new`: passing controller's properties to rules
-- `release`: version 2.4.1
 
 ```php
 <?php
@@ -10,6 +9,7 @@ ways::rule('is-admin-section', function($data, $args, $props){
 	return $args['section'] === 'admin';
 });
 ```
+- `release`: version 2.4.1
 
 Dec 12, 2019
 -------------------
