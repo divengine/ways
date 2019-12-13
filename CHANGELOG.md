@@ -1,5 +1,18 @@
 Dec 12, 2019
 -------------------
+- `new`: passing controller's properties to rules
+- `release`: version 2.4.1
+
+```php
+<?php
+ways::rule('is-admin-section', function($data, $args, $props){
+	var_dump($props);
+	return $args['section'] === 'admin';
+});
+```
+
+Dec 12, 2019
+-------------------
 - `new`: passing data and args to rules
 
 ```php

@@ -1102,7 +1102,7 @@ class ways
                 foreach ($rules as $rule) {
                     $check = true;
                     if (is_string($rule) && array_key_exists($rule, self::$__rules)) {
-                        $check = self::checkRule($rule, $data, $args);
+                        $check = self::checkRule($rule, $data, $args, $control['prop']);
                     } elseif (is_callable($rule)) {
                         $check = $rule();
                     }
@@ -1734,18 +1734,22 @@ class ways
         self::$__rules[$ruleName] = $rule;
     }
 
-    /**
-     * Check a rule
-     *
-     * @param $ruleName
-     *
-     * @return bool
-     */
-    public static function checkRule($ruleName, $data, $args)
+	/**
+	 * Check a rule
+	 *
+	 * @param $ruleName
+	 *
+	 * @param  array  $data
+	 * @param  array  $args
+	 * @param  array  $props
+	 *
+	 * @return bool
+	 */
+    public static function checkRule($ruleName, $data = [], $args = [], $props = [])
     {
         $rule = self::$__rules[$ruleName];
 
-        return (bool) $rule($data, $args);
+        return (bool) $rule($data, $args, $props);
     }
 
     /**
