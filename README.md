@@ -1,4 +1,4 @@
-﻿# Div PHP Ways 2.4.0
+# Div PHP Ways 2.4.0
 
 A "way" is different to a "route". We need a path for found 
 a specific resource, but we need a way for do something. 

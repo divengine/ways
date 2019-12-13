@@ -1091,9 +1091,12 @@ class ways
                 $method = "{$controller}@{$action}";
                 if (isset($rules[$method])) {
                     $rules = $rules[$method];
-                    if (is_string($rules)) {
-                        $rules = [$rules];
-                    }
+                } elseif (isset($rules[$action])) {
+                    $rules = $rules[$action];
+                }
+
+                if (is_string($rules)) {
+                    $rules = [$rules];
                 }
 
                 foreach ($rules as $rule) {
@@ -1469,9 +1472,13 @@ class ways
                 if (!is_array($rules)) {
                     $rules = [$rules];
                 }
+
                 foreach ($rules as $rule) {
+                    if (!is_array(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]))
+                        self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [];
                     self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]['Run'][] = $rule;
                 }
+
             }
 
 
