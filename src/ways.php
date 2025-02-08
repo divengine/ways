@@ -20,18 +20,16 @@ use RuntimeException;
  * http://www.gnu.org/licenses/gpl.txt.
  *
  * @package divengine/ways
- * @author  Rafa Rodriguez [@rafageist] <rafageist@hotmail.com>
- * @version 2.4.0
+ * @author  Rafa Rodriguez @rafageist [https://rafageist.com]
+ * @version 3.0.0
  *
- * @link    https://divengine.com
- * @link    https://divengine.com/ways
- * @link    https://github.com/divengine/ways.git
- * @link    https://github.com/divengine/ways/wiki
+ * @link    https://divengine.org
+ * @link    https://github.com/divengine/ways
  */
 
 // Constants
-!defined('PACKAGES') and define('PACKAGES', './');
-!defined('DIV_WAYS_DEFAULT_WAY_VAR') and define('DIV_WAYS_DEFAULT_WAY_VAR', '_url');
+defined('PACKAGES') or define('PACKAGES', './');
+defined('DIV_WAYS_DEFAULT_WAY_VAR') or define('DIV_WAYS_DEFAULT_WAY_VAR', '_url');
 
 define('DIV_WAYS_BEFORE_INCLUDE', 1);
 define('DIV_WAYS_BEFORE_RUN', 2);
@@ -57,7 +55,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '2.4.0';
+    private static $__version = '3.0.0';
 
     private static $__way_var;
 
@@ -309,7 +307,8 @@ class ways
      *
      * @return string
      */
-    public static function getRequestMethod(){
+    public static function getRequestMethod()
+    {
         // TODO: return the method of current way ?
         return self::getEnvironmentRequestMethod();
     }
@@ -411,14 +410,14 @@ class ways
                 $way = '';
                 $total_arguments = count($_SERVER['argv']);
                 for ($i = 1; $i < $total_arguments; $i++) {
-                    $way .= '/'.$_SERVER['argv'][$i];
+                    $way .= '/' . $_SERVER['argv'][$i];
                 }
             }
 
             if ($way === null || empty($way) || $way === '/') {
                 $way = $default_way;
             }
-            self::$__current_way = str_replace('///', '//', $request_method.'://'.$way);
+            self::$__current_way = str_replace('///', '//', $request_method . '://' . $way);
         }
 
         // if default_way is forced to "/", this will return "/"
@@ -426,7 +425,7 @@ class ways
         if ($uri === false || (!isset($uri['path']) && !isset($uri['host']))) {
             $uri = parse_url($default_way);
             if (isset($uri['scheme'])) {
-                $default_way = str_replace('///', '//', $request_method.'://'.$default_way);
+                $default_way = str_replace('///', '//', $request_method . '://' . $default_way);
             }
 
             return $default_way;
@@ -731,7 +730,7 @@ class ways
 
             if ($bracket < $star || $star === -1) {
                 $p = $bracket; // first open bracket
-                $new_way .= substr($way, 0, $p).'/';
+                $new_way .= substr($way, 0, $p) . '/';
                 $new_way = self::clearDoubleSlashes($new_way);
 
                 $p1 = strpos($pattern, '}', $p + 1); // first close bracket
@@ -751,7 +750,7 @@ class ways
                     $new_way .= substr($way, $p);
                     $way = '';
                 } else {
-                    $new_way .= substr($way, $p, $p3 - $p).'/';
+                    $new_way .= substr($way, $p, $p3 - $p) . '/';
                     $way = substr($way, $p3);
                 }
 
@@ -760,7 +759,7 @@ class ways
             } else {
                 $p = $star;
 
-                $new_way .= substr($way, 0, $p).'/';
+                $new_way .= substr($way, 0, $p) . '/';
                 $new_way = self::clearDoubleSlashes($new_way);
 
                 // can be changed with $pattern[$p+1] ?? '' but dont work in php 5.4
@@ -776,7 +775,7 @@ class ways
                     $new_way .= substr($way, $p);
                     $way = '';
                 } else {
-                    $new_way .= substr($way, $p, $p3 - $p).'/';
+                    $new_way .= substr($way, $p, $p3 - $p) . '/';
                     $way = substr($way, $p3);
                 }
 
@@ -837,9 +836,9 @@ class ways
             $new_way = '';
             $j = $away_count - 1;
             for ($i = $array_pattern_count - 1; $i > 0; $i--) {
-                $new_pattern = $array_pattern[$i].'/'.$new_pattern;
+                $new_pattern = $array_pattern[$i] . '/' . $new_pattern;
                 if (isset($away[$j])) {
-                    $new_way = $away[$j].'/'.$new_way;
+                    $new_way = $away[$j] . '/' . $new_way;
                     $j--;
                 }
             }
@@ -860,9 +859,9 @@ class ways
             $new_way = '';
             $j = 0;
             for ($i = 0; $i < $array_pattern_count - 1; $i++) {
-                $new_pattern .= $array_pattern[$i].'/';
+                $new_pattern .= $array_pattern[$i] . '/';
                 if (isset($away[$j])) {
-                    $new_way .= $away[$j].'/';
+                    $new_way .= $away[$j] . '/';
                     $j++;
                 }
             }
@@ -1025,7 +1024,7 @@ class ways
             list($arg, $checker) = explode('|', $pattern);
             if (is_callable($checker)) {
                 if (strpos($checker, '::') !== false) { // important !
-                    list ($checker_class, $checker_method) = explode('::', $checker);
+                    list($checker_class, $checker_method) = explode('::', $checker);
                     $value_match = $checker_class::$checker_method($arg_value);
                 } elseif ($checker === 'is_bool') {
                     $value_match = (strtolower($arg_value) === 'true' || $arg_value === 1);
@@ -1278,7 +1277,7 @@ class ways
                 if (is_string($call)) {
                     $result = [$call => $result];
                 } else {
-                    $result = ['hook-'.uniqid('', true) => $result];
+                    $result = ['hook-' . uniqid('', true) => $result];
                 }
             }
 
@@ -1306,6 +1305,11 @@ class ways
 
         $url = parse_url($way);
 
+        if ($url === false)
+        {
+            $url = [];
+        }
+        
         if (!isset($url['scheme'])) {
             $url['scheme'] = self::getEnvironmentRequestMethod();
         }
@@ -1324,7 +1328,7 @@ class ways
         }
 
         $result['methods'] = explode('-', strtoupper($url['scheme']));
-        $result['way'] = $url['host'].'/'.$url['path'];
+        $result['way'] = $url['host'] . '/' . $url['path'];
 
         return $result;
     }
@@ -1333,8 +1337,8 @@ class ways
      * Listen way
      *
      * @param string $pattern
-     * @param string $controller
-     * @param mixed  $properties
+     * @param mixed $controller
+     * @param mixed $properties
      *
      * @return string
      */
@@ -1398,8 +1402,8 @@ class ways
      */
     public static function register($path, $properties = [])
     {
-        if (!file_exists($path) && file_exists(PACKAGES.$path)) {
-            $path = PACKAGES.$path;
+        if (!file_exists($path) && file_exists(PACKAGES . $path)) {
+            $path = PACKAGES . $path;
         }
 
         $namespace = null;
@@ -1428,8 +1432,8 @@ class ways
                         $prop[$key],
                     ];
                 }
-                $method = trim(substr($key.' ', 7));
-                $action = $prop[self::PROPERTY_ID].'@'.$method;
+                $method = trim(substr($key . ' ', 7));
+                $action = $prop[self::PROPERTY_ID] . '@' . $method;
 
                 if (isset($prop["rules@{$method}"])) {
                     $rules = $prop["rules@{$method}"];
@@ -1439,7 +1443,7 @@ class ways
                     foreach ($rules as $rule) {
                         if (!empty(self::$__controllers[$prop[self::PROPERTY_ID]])) {
 
-                            if (!isset(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES])){
+                            if (!isset(self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES])) {
                                 self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [];
                             }
 
@@ -1478,7 +1482,6 @@ class ways
                         self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES] = [];
                     self::$__controllers[$prop[self::PROPERTY_ID]]['prop'][self::PROPERTY_RULES]['Run'][] = $rule;
                 }
-
             }
 
 
@@ -1635,17 +1638,17 @@ class ways
 
             foreach ($complement as $key => $value) {
                 if (is_object($source)) {
-                    if (isset ($source->$key)) {
+                    if (isset($source->$key)) {
                         $source->$key = self::cop($source->$key, $value, $level + 1);
                     } else {
                         $source->$key = self::cop($null, $value, $level + 1);
                     }
                 }
                 if (is_array($source)) {
-                    if (isset ($source [$key])) {
-                        $source [$key] = self::cop($source [$key], $value, $level + 1);
+                    if (isset($source[$key])) {
+                        $source[$key] = self::cop($source[$key], $value, $level + 1);
                     } else {
-                        $source [$key] = self::cop($null, $value, $level + 1);
+                        $source[$key] = self::cop($null, $value, $level + 1);
                     }
                 }
             }
@@ -1734,17 +1737,17 @@ class ways
         self::$__rules[$ruleName] = $rule;
     }
 
-	/**
-	 * Check a rule
-	 *
-	 * @param $ruleName
-	 *
-	 * @param  array  $data
-	 * @param  array  $args
-	 * @param  array  $props
-	 *
-	 * @return bool
-	 */
+    /**
+     * Check a rule
+     *
+     * @param $ruleName
+     *
+     * @param  array  $data
+     * @param  array  $args
+     * @param  array  $props
+     *
+     * @return bool
+     */
     public static function checkRule($ruleName, $data = [], $args = [], $props = [])
     {
         $rule = self::$__rules[$ruleName];
@@ -1760,7 +1763,7 @@ class ways
     final public static function isCli()
     {
         if (self::$__is_cli === null) {
-            self::$__is_cli = (!isset ($_SERVER ['SERVER_SOFTWARE']) && (PHP_SAPI === 'cli' || (is_numeric($_SERVER ['argc']) && $_SERVER ['argc'] > 0)));
+            self::$__is_cli = (!isset($_SERVER['SERVER_SOFTWARE']) && (PHP_SAPI === 'cli' || (is_numeric($_SERVER['argc']) && $_SERVER['argc'] > 0)));
         }
 
         return self::$__is_cli;

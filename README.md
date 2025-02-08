@@ -1,9 +1,45 @@
-# Div PHP Ways 2.4.0
+# Div PHP Ways
 
-A "way" is different to a "route". We need a path for found 
-a specific resource, but we need a way for do something. 
-This library follow this concept when implements the 
+[![Latest Stable Version](https://poser.pugx.org/divengine/ways/v)](https://packagist.org/packages/divengine/ways) [![Total Downloads](https://poser.pugx.org/divengine/ways/downloads)](https://packagist.org/packages/divengine/ways) [![Latest Unstable Version](https://poser.pugx.org/divengine/ways/v/unstable)](https://packagist.org/packages/divengine/ways) [![License](https://poser.pugx.org/divengine/ways/license)](https://packagist.org/packages/divengine/ways) [![PHP Version Require](https://poser.pugx.org/divengine/ways/require/php)](https://packagist.org/packages/divengine/ways)
+
+A "way" is different to a "route". We need a path for found a specific resource, but we need a way for do something. This library follow this concept when implements the 
 routing and control of PHP application.
+
+This class redefines the way PHP applications handle routing and control. Unlike traditional routes, Div PHP Ways introduces the concept of "ways" to execute actions dynamically in a modular and flexible manner.
+
+## Key Features
+
+- **Service-Oriented Architecture (SOA):** Adapts SOA principles to PHP applications for enhanced modularity.
+  
+- **Hybrid System Integration:** Seamlessly integrates components in a hybrid system, providing a cohesive architecture.
+
+- **HTTP and CLI Routing:** Acts as a robust router for both HTTP and CLI interfaces, offering a unified approach.
+
+Explore the possibilities with Div PHP Ways and elevate your PHP application architecture to new heights!
+
+## Examples
+
+```php
+<?php
+
+// Registering a closure
+ways::listen("get://home", function($data){
+    echo "Hello {$data['user']}";
+}, "home");
+
+// Adding a hook
+ways::hook(DIV_WAYS_BEFORE_RUN, "home", function($data){
+    $data['user'] = "Peter";
+});
+
+// Listening...
+$data = ways::bootstrap('_url', 'home');
+
+
+
+# Div PHP Ways 2.4.2
+
+
 
 Ways is a class that adapts the concept of SOA to the architecture 
 of a PHP application, and tries to integrate the parts of a hybrid 
