@@ -121,12 +121,14 @@ single class, in a single file. This allows quick start-up
 and easy adaptation with other platforms.
 
 ## Documentation
-https://github.com/divengine/ways/wiki
+
+Visit https://divengine.org
 
 ## Installation
 
 With composer...
-```
+
+```bash
 composer require divengine/ways
 ```
 
@@ -137,6 +139,7 @@ include "path/to/divengine/ways.php";
 ```
 
 ## Basic usage
+
 ```php
 <?php
 
@@ -162,6 +165,7 @@ $data = ways::bootstrap('_url', 'home');
 ## Call a static method
 
 **app/control/Home.php**
+
 ```php
 <?php
 
