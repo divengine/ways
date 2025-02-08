@@ -677,7 +677,7 @@ class ways
      */
     public static function replaceRecursive($search, $replace, $source)
     {
-        while (strpos($source, $search) !== false) {
+        while (strpos("$source", "$search") !== false) {
             $source = str_replace($search, $replace, $source);
         }
 
@@ -693,7 +693,7 @@ class ways
      */
     public static function normalizePattern($value)
     {
-        $value = str_replace(['{', '}', '*'], ['/{', '}/', '/*/'], $value);
+        $value = str_replace(['{', '}', '*'], ['/{', '}/', '/*/'], "$value");
         $value = self::clearDoubleSlashes($value);
         $value = self::clearSideSlashes($value);
 
@@ -714,8 +714,8 @@ class ways
         $new_way = '';
 
         while (true) {
-            $bracket = strpos($pattern, '{');
-            $star = strpos($pattern, '*');
+            $bracket = strpos("$pattern", '{');
+            $star = strpos("$pattern", '*');
 
             if ($bracket === false) {
                 $bracket = -1;
@@ -1309,7 +1309,7 @@ class ways
         {
             $url = [];
         }
-        
+
         if (!isset($url['scheme'])) {
             $url['scheme'] = self::getEnvironmentRequestMethod();
         }
