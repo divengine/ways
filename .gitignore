@@ -1,5 +1,13 @@
 .idea/*
+build/
 example
 vendor
 .vscode
 composer.lock
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.cache
+.DS_Store

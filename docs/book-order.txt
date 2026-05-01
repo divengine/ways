@@ -1,0 +1,6 @@
+docs/Div PHP Ways.md
+docs/Introduction to Div PHP Ways.md
+docs/Getting started.md
+docs/Call a static method.md
+docs/CLI app.md
+docs/Get controller properties.md

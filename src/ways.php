@@ -21,7 +21,7 @@ use RuntimeException;
  *
  * @package divengine/ways
  * @author  Rafa Rodriguez @rafageist [https://rafageist.com]
- * @version 3.0.0
+ * @version 2.5.0
  *
  * @link    https://divengine.org
  * @link    https://github.com/divengine/ways
@@ -55,7 +55,7 @@ class ways
 
     const PROPERTY_RULES = 'rules';
 
-    private static $__version = '3.0.0';
+    private static $__version = '2.5.0';
 
     private static $__way_var;
 
@@ -578,7 +578,7 @@ class ways
             $args = [];
             $pattern = trim($pattern);
 
-            if ($pattern === null || empty($pattern) || $pattern === '/') {
+            if ($pattern === '' || $pattern === '/') {
                 $pattern = $default_way;
             }
 
